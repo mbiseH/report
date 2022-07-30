@@ -1,0 +1,112 @@
+# mutation CreateProject(
+# $projectClient: String!,
+# $projectComments: String!,
+# $projectDescription: String!,
+# $projectEndDate: String!,
+# $projectLeader: String!,
+# $projectMembersInput: [UserInput]!,
+# $projectName: String!,
+# $projectRemarks: String!,
+# $projectStartDate: String!,
+# $projectStatus: String!,
+# ){
+#   CreateProject(projectClient: $projectClient,
+# projectComments: $projectComments,
+# projectDescription: $projectDescription,
+# projectEndDate: $projectEndDate,
+# projectLeader: $projectLeader,
+# projectMembers: $projectMembersInput,
+# projectName: $projectName,
+# projectRemarks: $projectRemarks,
+# projectStartDate: $projectStartDate,
+# projectStatus: $projectStatus)
+#   {
+#     project
+#     {
+#       projectName
+#       projectId
+#     }
+#   }
+  
+  
+  
+#   {
+
+#   "projectClient" : "wizara",
+# "projectComments":"jkjkjhkj" ,
+# "projectDescription": "iujkhj",
+# "projectEndDate": "2023-12-02",
+# "projectMembersInput": [{"id":"VXNlck5vZGU6MQ==", "username": "new_user"},
+#   {"id":"VXNlck5vZGU6Mg==", "username": "egovridc"}],
+# "projectLeader": "Malgado",
+# "projectName":"IVR",
+# "projectRemarks": "jjhgjhf",
+# "projectStartDate": "2022-11-09",
+# "projectStatus":"iuyuytu"
+# }
+# }
+
+# {
+#   users{
+#     edges{
+#       node{
+#         username
+#         id
+
+#       }
+#     }
+#   }
+# }
+
+# query allProjects
+# {
+#   allProjects{
+#     projectName
+#   }
+# }
+
+# mutation register(
+# $email: String!,
+# $username: String!,
+# $password1: String!,
+# $password2: String!,
+# ){
+#   register(
+# email: $email,
+# username: $username,
+# password1: $password1,
+# password2:$password2)
+#   {
+#     success
+#     token
+#   }
+  
+#   {
+#   "email": "user1@gmail.com",
+# "username": "user1",
+# "password1": "user1password",
+# "password2":"user1password"
+# }
+# }
+
+# mutation verifyAccount
+# {
+#   verifyAccount(token:"eyJ1c2VybmFtZSI6InVzZXIxIiwiYWN0aW9uIjoiYWN0aXZhdGlvbiJ9:1oHMxN:ne1U_eBxSN-3Hoet3gvcglfafJn2Ifu-mSDl8hw8ixs")
+#   {
+#     success
+#   }
+# }
+
+# {
+#   users{
+#     edges
+#     {
+#       node{
+#         username
+#         id
+#       }
+#     }
+#   }
+# }
+
+
