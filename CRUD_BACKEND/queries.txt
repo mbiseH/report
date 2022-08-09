@@ -1,55 +1,56 @@
-# mutation CreateProject(
-# $projectClient: String!,
-# $projectComments: String!,
-# $projectDescription: String!,
-# $projectEndDate: String!,
-# $projectLeader: String!,
-# $projectMembersInput: [UserInput]!,
-# $projectName: String!,
-# $projectRemarks: String!,
-# $projectStartDate: String!,
-# $projectStatus: String!,
-# ){
-#   CreateProject(projectClient: $projectClient,
-# projectComments: $projectComments,
-# projectDescription: $projectDescription,
-# projectEndDate: $projectEndDate,
-# projectLeader: $projectLeader,
-# projectMembers: $projectMembersInput,
-# projectName: $projectName,
-# projectRemarks: $projectRemarks,
-# projectStartDate: $projectStartDate,
-# projectStatus: $projectStatus)
+# mutation CreateProject{
+#   CreateProject(projectClient : "wizara",
+# projectComments:"jkjkjhkj" ,
+# projectDescription: "iujkhj",
+# projectEndDate: "2023-12-02",
+# # projectLeaderId: "VXNlck5vZGU6Mg==",
+# projectName:"OS",
+# projectRemarks: "jjhgjhf",
+# projectStartDate: "2022-11-09",
+# projectStatus:"iuyuytu",)
 #   {
 #     project
 #     {
 #       projectName
+#       projectMembers {
+#         id
+#         username
+#       }
 #       projectId
 #     }
 #   }
+# }
   
-  
-  
-#   {
 
-#   "projectClient" : "wizara",
-# "projectComments":"jkjkjhkj" ,
-# "projectDescription": "iujkhj",
-# "projectEndDate": "2023-12-02",
-# "projectMembersInput": [{"id":"VXNlck5vZGU6MQ==", "username": "new_user"},
-#   {"id":"VXNlck5vZGU6Mg==", "username": "egovridc"}],
-# "projectLeader": "Malgado",
-# "projectName":"IVR",
-# "projectRemarks": "jjhgjhf",
-# "projectStartDate": "2022-11-09",
-# "projectStatus":"iuyuytu"
-# }
-# }
+
+
 
 # {
 #   users{
 #     edges{
-#       node{
+#       node{mutation CreateProject{
+#   CreateProject(projectClient : "wizara",
+# projectComments:"jkjkjhkj" ,
+# projectDescription: "iujkhj",
+# projectEndDate: "2023-12-02",
+# projectLeader: "Malgado",
+# projectName:"IVR",
+# projectRemarks: "jjhgjhf",
+# projectStartDate: "2022-11-09",
+# projectStatus:"iuyuytu",)
+#   {
+#     project
+#     {
+#       projectName
+#       projectMembers {
+#         id
+#         username
+#       }
+#       projectId
+#     }
+#   }
+# }
+  
 #         username
 #         id
 
@@ -57,56 +58,306 @@
 #     }
 #   }
 # }
-
 # query allProjects
 # {
 #   allProjects{
 #     projectName
-#   }
-# }
-
-# mutation register(
-# $email: String!,
-# $username: String!,
-# $password1: String!,
-# $password2: String!,
-# ){
-#   register(
-# email: $email,
-# username: $username,
-# password1: $password1,
-# password2:$password2)
-#   {
-#     success
-#     token
-#   }
-  
-#   {
-#   "email": "user1@gmail.com",
-# "username": "user1",
-# "password1": "user1password",
-# "password2":"user1password"
-# }
-# }
-
-# mutation verifyAccount
-# {
-#   verifyAccount(token:"eyJ1c2VybmFtZSI6InVzZXIxIiwiYWN0aW9uIjoiYWN0aXZhdGlvbiJ9:1oHMxN:ne1U_eBxSN-3Hoet3gvcglfafJn2Ifu-mSDl8hw8ixs")
-#   {
-#     success
-#   }
-# }
-
-# {
-#   users{
-#     edges
-#     {
-#       node{
-#         username
-#         id
-#       }
+#     projectId
+#     projectMembers {
+#       id
 #     }
 #   }
 # }
 
 
+mutation verifyAccount
+{
+  verifyAccount(token:"eyJ1c2VybmFtZSI6InVzZXIyIiwiYWN0aW9uIjoiYWN0aXZhdGlvbiJ9:1oLOEq:OvMAe7mHyPxOkHID90z8BEAR07KSRkWWyZtpffKEXRA")
+  {
+    success
+  }
+}
+
+query allusers{
+  users{
+    edges
+    {
+      node{
+        id
+      }
+    }
+  }
+}
+
+
+# mutation register(
+# $email: String!
+# $username: String!
+# $password1: String!
+# $password2: String!
+# )
+
+# {
+#   register(email:$email, username:$username, 
+# password1: $password1, password2:$password2){
+#   success
+#   errors
+  
+# }
+#       {
+#   "email": "user2@gmail.com",
+# "username": "user2",
+# "password1": "user2password",
+# "password2":"user2password"
+#   } 
+  
+# }
+
+
+
+# mutation yu{
+#   CreateProject(
+    
+# projectClient: "wizara",
+# projectComments:"jkjkjhkj" ,
+# projectDescription: "iujkhj",
+# projectEndDate: "2022-12-02",
+# projectName:"Localized eGA Browser",
+# projectRemarks: "jjhgjhf",
+# projectStartDate: "2022-11-09",
+# projectStatus:"iuyuytu",
+#     projectLeaderId:"VXNlck5vZGU6Mw=="
+#   )
+#   {
+#     project
+#     {
+#       projectName
+#       projectMembers {
+#         id
+#         username
+#       }
+#       projectId
+#     }
+#   }
+# }
+  
+# 
+  
+#   mutation CreateEnrollment(
+#     $projectId: ID!,
+#     $userId:String!)
+#     {
+#       CreateEnrollment(
+#         projectId:$projectId, 
+#         userId:$userId)
+#       {
+#         enrollment{
+#           enrollmentDate
+#         }
+#       }
+#     {
+#   "projectId": "1",
+#     "userId": "VXNlck5vZGU6MQ=="
+# }
+#     }
+    
+mutation CreateEnrollment{
+CreateEnrollment(userId:"VXNlck5vZGU6MQ==", projectId:"1")
+{
+  enrollment{
+    enrollmentId
+    enrollmentDate
+  }
+}
+}
+
+    
+
+    query hjgjh{
+  allProjects{
+    projectId
+    projectName
+    projectStartDate
+    projectEndDate
+    projectLeader
+    {
+      username
+    }
+    projectMembers {
+      id
+    }
+  }
+}
+    
+    # query user{
+    #   user(id:"VXNlck5vZGU6Mg==")
+    #   {
+    #     username
+    #   }
+    # }
+    
+    
+    
+#    query kl {
+#       allEnrollments
+#       {
+#         enrollmentId
+# projectId
+#         {
+#           projectId
+#         }
+# userId {
+#   id
+# }
+# enrollmentDate
+# projectName
+#       }
+#     }
+    
+  
+#     query pop{
+#       oneProject(projectId:"1")
+#       {
+#         projectId
+#         projectName
+#         projectStatus
+#         projectStartDate
+#         projectEndDate
+#         projectClient
+#         projectDescription
+#         projectComments
+#         projectRemarks
+#         projectLeader
+#         {
+#           id
+#         }
+        
+#         tasksSet
+#         {
+#           taskId
+#         }
+#         projectMembers{
+#           id
+         
+#         }
+#       }
+#     }
+    
+    
+#     mutation UpdateProject
+#     {
+#       UpdateProject(
+#         projectId:1, 
+#         userIdToBeRemoved:"VXNlck5vZGU6MQ=="
+        
+#       )
+#       {
+#         project
+#         {
+#         projectId
+#         projectName
+#         projectStatus
+#         projectStartDate
+#         projectEndDate
+#         projectClient
+#         projectDescription
+#         projectComments
+#         projectRemarks
+#         projectLeader {
+#           username
+#         }
+        
+#         tasksSet
+#         {
+#           taskId
+#         }
+#         projectMembers{
+#           username
+         
+#         }
+#       }
+#     }
+#     }
+    
+    
+
+    
+    
+# mutation jkjk
+# {
+#   DeleteProject(projectId:"1")
+#   {
+#     project
+#     {
+#       projectName
+#     }
+#   }
+# }
+    
+    
+    # mutation deleteEnrollment
+    # {
+    #   DeleteEnrollment
+    #   (projectId:"1", userIdToBeRemoved:"VXNlck5vZGU6MQ==")
+    #   {
+    #     enrollment
+    #     {
+    #       enrollmentId
+    #     }
+    #   }
+    # }
+    
+# query jkjkjkjk{
+#   allEnrollments
+#   {
+#     enrollmentId
+#     userId
+#     {
+#       id
+#     }
+#     projectId
+#     {
+#       projectId
+#     }
+#     projectName
+#   }
+# }    
+    
+mutation mimi{
+  CreateTask(projectId:"1", taskStatus:"MM", 
+    taskCompletionDate:"2022-09-08", taskDescription:"hjhj", 
+  taskStartDate:"2022-09-09", userId:"VXNlck5vZGU6MQ==")
+  {
+    task
+    {
+      taskStartDate
+    }
+  }
+}
+
+query hjhjh{
+  allTasksForAProject(projectId:"1",)
+  {
+    
+    taskId
+  }
+}
+    
+    
+mutation ghgsd{
+  DeleteTask(taskId:"2")
+  {
+    task
+    {
+      taskStatus
+    }
+  }
+}    
+    
+    
+    
+    
+    
+    
+    
+    
