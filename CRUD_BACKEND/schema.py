@@ -1,3 +1,4 @@
+
 import os
 import xlwt
 import  graphene
@@ -6,19 +7,24 @@ from datetime import datetime
 from xlrd import open_workbook
 from graphql import GraphQLError
 from django.http import HttpResponse
+from graphql_relay import from_global_id
 from django.contrib.auth.models import User
 from graphene_django import DjangoObjectType
 from django.shortcuts import render, redirect
 from graphql_jwt.decorators import login_required
 from django.views.generic.base import TemplateView
 from graphql_jwt.decorators import staff_member_required
-from CRUD_BACKEND.models import role, tasks, project, user, report
+from CRUD_BACKEND.models import role, tasks, project, user, report, enrollment
 
 
 
 class role_type(DjangoObjectType):
     class Meta:
         model = role
+
+class enrollment_type(DjangoObjectType):
+    class Meta:
+        model = enrollment
 
 class task_type(DjangoObjectType):
     class Meta:
@@ -47,15 +53,30 @@ class UserInput(graphene.InputObjectType):
 class Query(graphene.ObjectType):
 
     all_projects= graphene.List(project_type)
-    project = graphene.List(project_type, project_id = graphene.ID())
+    one_project = graphene.Field(project_type, project_id = graphene.ID())
 
     # @login_required
     def resolve_all_projects(self, info, **kwargs):
         return project.objects.all()
 
-    @login_required
-    def resolve_project (self, info, project_id):
-        return project.objects.filter(pk=project_id)
+    # @login_required
+    def resolve_one_project (self, info, project_id):
+        return project.objects.get(pk=project_id)
+
+
+
+    all_tasks_for_a_project = graphene.List(task_type, project_id=graphene.ID())
+
+    def resolve_all_tasks_for_a_project(self, info, project_id):
+            return tasks.objects.filter(project_id=project_id)
+
+
+    all_enrollments= graphene.List(enrollment_type)
+
+    # @login_required
+    def resolve_all_enrollments(self, info):
+        return enrollment.objects.all()
+
 
 
 
@@ -72,7 +93,7 @@ class CreateProject(graphene.Mutation):
         project_description = graphene.String(required= True)
         project_comments = graphene.String(required= True)
         project_remarks = graphene.String(required= True)
-        project_leader = graphene.String(required= True)
+        project_leader_id = graphene.String()
 
     project = graphene.Field(project_type)
 
@@ -80,38 +101,188 @@ class CreateProject(graphene.Mutation):
     try:
         # @staff_member_required
         def mutate(self, info,
-                project_name, project_members, project_status,
-                project_start_date, project_end_date, project_client,
-                project_description, project_leader,project_comments,
-                project_remarks):
-                # try:
-                start_date_date_object = datetime.strptime(project_start_date, '%Y-%m-%d').date()
-                end_date_date_object = datetime.strptime(project_end_date, '%Y-%m-%d').date()
+                project_name, project_status,project_start_date, project_end_date,
+                project_client,project_description, project_comments,project_remarks, project_leader_id=None):
 
-                createdProject= project.objects.create (
+                    start_date_object = datetime.strptime(project_start_date, '%Y-%m-%d').date()
+                    end_date_object = datetime.strptime(project_end_date, '%Y-%m-%d').date()
+                    try:
+                        if project_leader_id is not None:
+                            user_id = from_global_id(project_leader_id)[1]
+                            userObject = user.objects.get(pk=user_id)
+                            createdProject= project.objects.create (
 
-                            project_name = project_name,
-                            project_status = project_status,
-                            project_start_date = start_date_date_object,
-                            project_end_date = end_date_date_object,
-                            project_client = project_client,
-                            project_description = project_description,
-                            project_remarks = project_remarks,
-                            project_leader = project_leader,
-                            project_comments = project_comments)
+                                        project_name = project_name,
+                                        project_status = project_status,
+                                        project_start_date = start_date_object,
+                                        project_end_date = end_date_object,
+                                        project_client = project_client,
+                                        project_description = project_description,
+                                        project_remarks = project_remarks,
+                                        project_leader = userObject,
+                                        project_comments = project_comments)
 
-                if project_members is not None:
-                    for member in project_members:
-                        createdProject.project_members.add(member.username)
-                        createdProject.save()
-                return CreateProject( project = createdProject)
+                        else:
+                            createdProject= project.objects.create (
 
-                # except:
-                #     raise GraphQLError("A problem occurred during the project creation!")
+                                            project_name = project_name,
+                                            project_status = project_status,
+                                            project_start_date = start_date_object,
+                                            project_end_date = end_date_object,
+                                            project_client = project_client,
+                                            project_description = project_description,
+                                            project_remarks = project_remarks,
+                                            project_comments = project_comments)
 
+                        return CreateProject( project = createdProject)
+
+                    except:
+                        raise GraphQLError("This project exists!")
 
     except:
         raise GraphQLError("Dear User, A problem occurred during the project creation!")
+
+
+
+
+class UpdateProject(graphene.Mutation):
+
+    class  Arguments:
+
+        project_id = graphene.ID(required=True)
+        project_name = graphene.String()
+        project_status = graphene.String()
+        project_end_date = graphene.Date()
+        project_client = graphene.String()
+        project_description = graphene.String()
+        project_comments = graphene.String()
+        project_remarks = graphene.String()
+        project_leader_id = graphene.ID()
+        project_start_date = graphene.Date()
+
+    project = graphene.Field(project_type)
+
+    try:
+        # @login_required
+        # @staff_member_required
+        def mutate(self, info, project_id, project_description = None, project_name = None,
+                project_status = None, project_end_date = None,
+                project_client = None, project_comments = None, project_remarks = None,
+                project_leader_id = None,project_start_date=None):
+
+            updatedProject = project.objects.get(pk=project_id)
+
+            if  updatedProject is not None:
+                updatedProject.project_description = project_description if project_description is not None else  updatedProject.project_description
+                updatedProject.project_name = project_name if project_name is not None else  updatedProject.project_name
+                updatedProject.project_status = project_status if project_status is not None else  updatedProject.project_status
+                updatedProject.project_client = project_client if project_client is not None else  updatedProject.project_client
+                updatedProject.project_description = project_description if project_description is not None else  updatedProject.project_description
+                updatedProject.project_comments = project_comments if project_comments is not None else  updatedProject.project_comments
+                updatedProject.project_remarks = project_remarks if project_remarks is not None else  updatedProject.project_remarks
+                updatedProject.project_start_date = project_start_date if project_start_date is not None else  updatedProject.project_start_date
+                updatedProject.project_end_date = project_end_date if project_end_date is not None else  updatedProject.project_end_date
+
+                if project_leader_id is not None:
+
+                    user_id = from_global_id(project_leader_id)[1]
+                    userObject = user.objects.get(pk=user_id)
+                    updatedProject.project_leader = userObject
+
+                updatedProject.save()
+                return UpdateProject( project = updatedProject)
+            else:
+                raise GraphQLError("The project does not exist.")
+
+    except:
+            raise GraphQLError("A problem occurred.Please try again.")
+
+
+
+class DeleteProject(graphene.Mutation):
+
+    class  Arguments:
+
+        project_id = graphene.ID(required=True)
+
+    project = graphene.Field(project_type)
+
+    try:
+        # @login_required
+        # @staff_member_required
+        def mutate(self, info, project_id):
+
+            deletedProject = project.objects.get(pk=project_id)
+            if deletedProject:
+                deletedProject.delete()
+                return DeleteProject( project = deletedProject)
+            else:
+                raise GraphQLError("The project does not exist.")
+
+    except:
+            raise GraphQLError("A problem occurred.Please try again.")
+
+
+
+class CreateEnrollment(graphene.Mutation):
+
+    class  Arguments:
+            project_id = graphene.ID(required= True)
+            user_id = graphene.ID(required= True)
+
+    enrollment = graphene.Field(enrollment_type)
+
+    # @staff_member_required
+    def mutate(self, info, project_id , user_id):
+
+
+        projectObject= project.objects.get(pk=project_id)
+        id = from_global_id(user_id)[1]
+        userObject = user.objects.get(pk=id)
+
+        try:
+
+            if userObject and projectObject is not None:
+
+                createdEnrollment, created= enrollment.objects.get_or_create (project_id=projectObject, user_id=userObject, project_name = projectObject.project_name)
+                projectObject.project_members.add(userObject.id)
+                projectObject.save()
+
+                return CreateEnrollment(enrollment=createdEnrollment)
+
+
+        except:
+            raise GraphQLError("This user is added to the project already! Try using another user.")
+
+
+
+class DeleteEnrollment(graphene.Mutation):
+
+    class  Arguments:
+            project_id = graphene.ID(required= True)
+            user_id_to_be_removed = graphene.ID(required= True)
+
+    enrollment = graphene.Field(enrollment_type)
+
+    # @staff_member_required
+    def mutate(self, info, project_id, user_id_to_be_removed=None):
+
+
+        try:
+            projectObject= project.objects.get(pk=project_id)
+            id = from_global_id(user_id_to_be_removed)[1]
+            userObject = user.objects.get(pk=id)
+            projectObject.project_members.remove(id)
+
+            enrollment_object= enrollment.objects.filter(project_id=projectObject.project_id).filter(user_id = userObject.id).get()
+            enrollment_object.delete()
+
+            projectObject.save()
+
+            return DeleteEnrollment(enrollment=enrollment_object)
+
+        except project.DoesNotExist:
+            raise GraphQLError("A problem occurred during the deletion process!")
 
 
 
@@ -123,22 +294,30 @@ class CreateTask(graphene.Mutation):
         task_description = graphene.String(required = True)
         task_completion_date = graphene.Date(required = True)
         task_status = graphene.String(required = True)
-        associated_project = graphene.ID(required = True)
+        project_id = graphene.ID(required = True)
+        user_id = graphene.ID(required = True)
+        task_start_date = graphene.Date(required = True)
+        
+        
 
     task = graphene.Field(task_type)
 
     try:
-        @login_required
-        def mutate(self, info, task_description , task_completion_date, task_status,associated_project ):
-
-            projectObject = project.objects.filter(pk=associated_project)
+        # @login_required
+        def mutate(self, info, task_description , user_id, task_completion_date, task_status,project_id, task_start_date ):
+            
+            id = from_global_id(user_id)[1]
+            userObject = user.objects.get(pk=id)
+            projectObject = project.objects.get(pk=project_id)
 
             if projectObject is not None:
-                    createdTask= tasks.objects.create (
+                    createdTask, created= tasks.objects.get_or_create (
                         task_description= task_description,
                         task_completion_date = task_completion_date,
                         task_status = task_status,
-                        project_id = projectObject)
+                        project_id = projectObject,
+                        task_start_date = task_start_date, 
+                        user_id=userObject)
 
                     return CreateTask(task = createdTask)
 
@@ -152,79 +331,49 @@ class CreateTask(graphene.Mutation):
 
 class UpdateTask(graphene.Mutation):
 
-    class  Arguments:
-        task_id =  graphene.ID(required= True)
-        task_description =  graphene.String()
-        task_completion_date = graphene.Date()
-        task_status = graphene.String()
+        class  Arguments:
+            task_id =  graphene.ID(required= True)
+            task_description =  graphene.String()
+            task_completion_date = graphene.Date()
+            task_status = graphene.String()
 
-    task = graphene.Field(task_type)
-    try:
+        task = graphene.Field(task_type)
+
         @login_required
         def mutate(self, info, task_id, task_description=None , task_completion_date=None, task_status=None):
 
-            updatedTask = tasks.objects.filter(pk=task_id)
+            updatedTask = tasks.objects.get(pk=task_id)
 
-            updatedTask.task_description = task_description if task_description is not None else  updatedTask.task_description
-            updatedTask.task_status = task_status if task_status is not None else updatedTask.task_status
+            if updatedTask:
+                updatedTask.task_description = task_description if task_description is not None else  updatedTask.task_description
+                updatedTask.task_status = task_status if task_status is not None else updatedTask.task_status
+                updatedTask.task_completion_date = task_completion_date if task_status is not None else updatedTask.task_completion_date
 
-            if task_completion_date is not None:
-                date_object = datetime.strptime(task_completion_date, "%Y-%m-%d").date()
-                updatedTask.task_completion_date = date_object
-
-            updatedTask.save()
-            return UpdateTask( task = updatedTask)
-    except:
-            raise GraphQLError("A problem occurred in the task update process.")
+                updatedTask.save()
+                return UpdateTask( task = updatedTask)
+            else:
+                raise GraphQLError("A problem occurred in the task update process.")
 
 
+class  DeleteTask(graphene.Mutation):
 
-class UpdateProject(graphene.Mutation):
+    class Arguments:
+        task_id = graphene.ID(required=True)
 
-    class  Arguments:
+    task = graphene.Field(task_type)
 
-        project_id = graphene.ID(required=True)
-        project_name = graphene.String()
-        project_members = graphene.List(graphene.ID)
-        project_status = graphene.String()
-        project_end_date = graphene.String()
-        project_client = graphene.String()
-        project_description = graphene.String()
-        project_comments = graphene.String()
-        project_remarks = graphene.String()
-        project_leader = graphene.String()
+    # @login_required
+    # @staff_member_required
+    def  mutate(self, info, task_id):
 
-    project = graphene.Field(project_type)
-    try:
-        @login_required
-        @staff_member_required
-        def mutate(self, info, project_id, project_description = None, project_name = None,
-                project_members = None,project_status = None, project_end_date = None,
-                project_client = None, project_comments = None, project_remarks = None,
-                project_leader = None):
 
-            updatedProject = project.objects.filter(pk=project_id)
+        try:
+            deleted_task = tasks.objects.get(pk=task_id)
+            deleted_task.delete()
+            return DeleteTask(task = deleted_task)
 
-            updatedProject.task_description = project_description if project_description is not None else  updatedProject.task_description
-            updatedProject.project_name = project_name if project_name is not None else  updatedProject.project_name
-            updatedProject.project_status = project_status if project_status is not None else  updatedProject.project_status
-            updatedProject.project_client = project_client if project_client is not None else  updatedProject.project_client
-            updatedProject.project_description = project_description if project_description is not None else  updatedProject.project_description
-            updatedProject.project_comments = project_comments if project_comments is not None else  updatedProject.project_comments
-            updatedProject.project_remarks = project_remarks if project_remarks is not None else  updatedProject.project_remarks
-            updatedProject.project_leader = project_leader if project_leader is not None else  updatedProject.project_leader
-
-            if project_end_date is not None:
-                date_object = datetime.strptime(project_end_date, "%Y-%m-%d").date()
-                updatedProject.project_end_date = date_object
-
-            if project_members is not None:
-                updatedProject.groups = user.objects.filter(pk__in=project_members)
-
-            updatedProject.save()
-            return UpdateTask( task = updatedProject)
-    except:
-            raise GraphQLError("A problem occurred.Please try again.")
+        except tasks.DoesNotExist:
+            raise GraphQLError ("task does not exist")
 
 
 class CreateRole(graphene.Mutation):
@@ -260,35 +409,41 @@ class CreateReport(graphene.Mutation):
 
             start_date_object = datetime.strptime(report_start_date,"%Y-%m-%d").date()
             end_date_object   = datetime.strptime(report_end_date,"%Y-%m-%d").date()
-            project_object    = project.objects.filter(id=project_id)
-            tasks_object      = tasks.objects.list(project_id= project_id)
 
-            if start_date_object and end_date_object and project_object is not None:
+            try:
+                project_object    = project.objects.get(id=project_id)
 
-                createdReport = report.objects.create (
-                                report_start_date = start_date_object,
-                                report_end_date = end_date_object,
-                                task_description = tasks_object.task_description,
-                                task_start_date = tasks_object.task_start_date,
-                                task_completion_date = tasks_object.task_completion_date,
-                                task_status = tasks_object.tasks_object,
-                                project_name = project_object.project_name,
-                                project_members = project_object.project_members,
-                                project_status = project_object.project_status,
-                                project_start_date = project_object.project_start_date,
-                                project_end_date = project_object.project_end_date,
-                                project_client = project_object.project_client,
-                                project_description = project_object.project_description,
-                                project_comments = project_object.project_comments,
-                                project_remarks = project_object.project_name,
-                                project_leader = project_object.project_leader,
-                    )
-                return CreateReport( createdReport  = createdReport)
+                try:
+                    tasks_object  = tasks.objects.filter(project_id= project_id)
 
-            else:
-                return GraphQLError("Provide Project name that exists and a valid date in a YYYY-MM-DD format.")
+                    createdReport, created = report.objects.get_or_create (
+                    report_start_date = start_date_object,
+                    report_end_date = end_date_object,
+                    task_description = tasks_object.task_description,
+                    task_start_date = tasks_object.task_start_date,
+                    task_completion_date = tasks_object.task_completion_date,
+                    task_status = tasks_object.tasks_object,
+                    project_name = project_object.project_name,
+                    project_members = project_object.project_members,
+                    project_status = project_object.project_status,
+                    project_start_date = project_object.project_start_date,
+                    project_end_date = project_object.project_end_date,
+                    project_client = project_object.project_client,
+                    project_description = project_object.project_description,
+                    project_comments = project_object.project_comments,
+                    project_remarks = project_object.project_name,
+                    project_leader = project_object.project_leader)
+
+                    return CreateReport( createdReport  = createdReport)
+                except tasks.DoesNotExist:
+                        raise GraphQLError(" The task does not exist")
+
+            except project.DoesNotExist:
+                raise GraphQLError("project does not exist")
     except:
-        raise GraphQLError("Ooops, something went wrong.")
+            raise GraphQLError("Ooops, something went wrong.")
+
+
 
 
 class UpdateRole(graphene.Mutation):
@@ -418,13 +573,26 @@ class UpdateRole(graphene.Mutation):
 
 
 
+
+
+
+
 class Mutation(graphene.ObjectType):
 
-    Create_Project = CreateProject.Field()
-    Update_Project = CreateProject.Field()
+
+    Create_Report = CreateReport.Field()
 
     Create_Task = CreateTask.Field()
     Update_Task = UpdateTask.Field()
+    Delete_Task = DeleteTask.Field()
 
     Create_Role = CreateRole.Field()
     Update_Role = UpdateRole.Field()
+
+    Create_Project = CreateProject.Field()
+    Update_Project = UpdateProject.Field()
+    Delete_Project = DeleteProject.Field()
+
+    Create_Enrollment = CreateEnrollment.Field()
+    Delete_Enrollment = DeleteEnrollment.Field()
+
