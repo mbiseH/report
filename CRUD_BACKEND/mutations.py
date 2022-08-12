@@ -1,18 +1,15 @@
 
 import os
-import xlwt
+import uuid
 import  graphene
-from xlutils.copy import copy
-from datetime import datetime
-from xlrd import open_workbook
+import pandas as pd
+from datetime import datetime, date
 from graphql import GraphQLError
-from django.http import HttpResponse
+from django.conf import settings
 from graphql_relay import from_global_id
-from django.contrib.auth.models import User
 from graphene_django import DjangoObjectType
-from django.shortcuts import render, redirect
 from graphql_jwt.decorators import login_required
-from django.views.generic.base import TemplateView
+from django.core.files.storage import FileSystemStorage
 from graphql_jwt.decorators import staff_member_required
 from CRUD_BACKEND.models import role, tasks, project, user, report, enrollment
 
@@ -49,33 +46,6 @@ class UserInput(graphene.InputObjectType):
 
 
 
-
-class Query(graphene.ObjectType):
-
-    all_projects= graphene.List(project_type)
-    one_project = graphene.Field(project_type, project_id = graphene.ID())
-
-    # @login_required
-    def resolve_all_projects(self, info, **kwargs):
-        return project.objects.all()
-
-    # @login_required
-    def resolve_one_project (self, info, project_id):
-        return project.objects.get(pk=project_id)
-
-
-
-    all_tasks_for_a_project = graphene.List(task_type, project_id=graphene.ID())
-
-    def resolve_all_tasks_for_a_project(self, info, project_id):
-            return tasks.objects.filter(project_id=project_id)
-
-
-    all_enrollments= graphene.List(enrollment_type)
-
-    # @login_required
-    def resolve_all_enrollments(self, info):
-        return enrollment.objects.all()
 
 
 
@@ -261,28 +231,36 @@ class DeleteEnrollment(graphene.Mutation):
     class  Arguments:
             project_id = graphene.ID(required= True)
             user_id_to_be_removed = graphene.ID(required= True)
+            enrollment_id = graphene.ID(required= True)
 
     enrollment = graphene.Field(enrollment_type)
 
     # @staff_member_required
-    def mutate(self, info, project_id, user_id_to_be_removed=None):
+    def mutate(self, info, project_id, enrollment_id,user_id_to_be_removed):
 
 
         try:
-            projectObject= project.objects.get(pk=project_id)
-            id = from_global_id(user_id_to_be_removed)[1]
-            userObject = user.objects.get(pk=id)
-            projectObject.project_members.remove(id)
+            deletedEnrollment= enrollment.objects.get(pk = enrollment_id)
 
-            enrollment_object= enrollment.objects.filter(project_id=projectObject.project_id).filter(user_id = userObject.id).get()
-            enrollment_object.delete()
+            try:
+                projectObject= project.objects.get(pk=project_id)
+                id = from_global_id(user_id_to_be_removed)[1]
+                projectObject.project_members.remove(id)
 
-            projectObject.save()
+                deletedEnrollment.delete()
+                projectObject.save()
 
-            return DeleteEnrollment(enrollment=enrollment_object)
+                return DeleteEnrollment(enrollment=deletedEnrollment)
 
-        except project.DoesNotExist:
-            raise GraphQLError("A problem occurred during the deletion process!")
+            except project.DoesNotExist:
+                raise GraphQLError("Project Does not exist!")
+
+        except enrollment.DoesNotExist:
+            raise GraphQLError("Enrollment Does not exist!")
+
+
+
+
 
 
 
@@ -297,15 +275,14 @@ class CreateTask(graphene.Mutation):
         project_id = graphene.ID(required = True)
         user_id = graphene.ID(required = True)
         task_start_date = graphene.Date(required = True)
-        
-        
+
 
     task = graphene.Field(task_type)
 
     try:
         # @login_required
         def mutate(self, info, task_description , user_id, task_completion_date, task_status,project_id, task_start_date ):
-            
+
             id = from_global_id(user_id)[1]
             userObject = user.objects.get(pk=id)
             projectObject = project.objects.get(pk=project_id)
@@ -316,7 +293,7 @@ class CreateTask(graphene.Mutation):
                         task_completion_date = task_completion_date,
                         task_status = task_status,
                         project_id = projectObject,
-                        task_start_date = task_start_date, 
+                        task_start_date = task_start_date,
                         user_id=userObject)
 
                     return CreateTask(task = createdTask)
@@ -404,25 +381,24 @@ class CreateReport(graphene.Mutation):
     report = graphene.Field(report_type)
 
     try:
-        @login_required
+        # @login_required
         def mutate(self, info,project_id, report_start_date, report_end_date):
 
-            start_date_object = datetime.strptime(report_start_date,"%Y-%m-%d").date()
-            end_date_object   = datetime.strptime(report_end_date,"%Y-%m-%d").date()
 
             try:
                 project_object    = project.objects.get(id=project_id)
 
                 try:
-                    tasks_object  = tasks.objects.filter(project_id= project_id)
+                    tasks_queryset  = tasks.objects.filter(project_id= project_id).values
+                    ('task_description','task_start_date', 'task_completion_date', 'task_status')
 
                     createdReport, created = report.objects.get_or_create (
-                    report_start_date = start_date_object,
-                    report_end_date = end_date_object,
-                    task_description = tasks_object.task_description,
-                    task_start_date = tasks_object.task_start_date,
-                    task_completion_date = tasks_object.task_completion_date,
-                    task_status = tasks_object.tasks_object,
+                    report_start_date = report_start_date,
+                    report_end_date = report_end_date,
+                    # task_description = tasks_object.task_description,
+                    # task_start_date = tasks_object.task_start_date,
+                    # task_completion_date = tasks_object.task_completion_date,
+                    # task_status = tasks_object.tasks_object,
                     project_name = project_object.project_name,
                     project_members = project_object.project_members,
                     project_status = project_object.project_status,
@@ -471,108 +447,51 @@ class UpdateRole(graphene.Mutation):
 
 
 
-# class ExcelPageView(TemplateView):
-#     template_name = "excel_home.html"
+# class export_write_xls(graphene.Mutation):
+
+    # class Arguments:
+    #     enrollment_id = graphene.ID(required=True)
+
+    # success = graphene.Boolean()
+    # full_file_url = graphene.String()
+    # file_name = graphene.String()
+
+    # def mutate(self, info,  enrollment_id, **kwargs):
+    #     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    #     report_name = 'WeeklyReport ' +str(current_time)+'.xlsx'
+
+    #     writer = pd.ExcelWriter(report_name, engine='xlsxwriter')
+    #     # data = enrollment.objects.filter(enrollment_id=enrollment_id)
+    #     data = enrollment.objects.all()
+    #     df = pd.DataFrame(data)
+    #     df.to_excel(writer, sheet_name='Weekly Report', index=False)
+    #     writer.save()
 
 
+    #     try:
+    #         if os.mkdir(os.path.join(str(settings.MEDIA_ROOT)+'/documents/', current_time)):
+    #             pass
+    #         else:
+    #             raise GraphQLError ("Folder Exists")
+    #         fs = FileSystemStorage(location=str(settings.MEDIA_ROOT)+'/documents/'+ current_time)
 
-# def export_project_xls(request):
-#     response = HttpResponse(content_type='application/ms-excel')
-#     response['Content-Disposition'] = 'attachment; filename= projects_report' + str(datetime.datetime.now()) + '.xls'
-
-#     wb = xlwt.Workbook(encoding='utf-8')
-#     ws = wb.add_sheet('Weekly Report ') # sheet of project Data
-
-#     # Sheet header, first row
-#     row_num = 0
-
-#     font_style = xlwt.XFStyle()
-#     font_style.font.bold = True
-
-#     columns = ['S/N', 'Client/Institution', 'Description', 'Project Team',
-#                'Status', 'Actions Taken During the Week and Plan', 'Project Comments',
-#                'Start Date', 'Expected Completion Date', 'Blocking Issues', 'Remarks']
-
-#     for col_num in range(len(columns)):
-#         ws.write(row_num, col_num, columns[col_num], font_style) # at 0 row 0 column
-
-#     # Sheet body, remaining rows
-#     font_style = xlwt.XFStyle()
-
-#     rows = report.objects.filter(project_id=request.user).values_list('report_id', 'project_client', 'project_description', 'project_members',
-#                                             'project_status', 'project_remarks','project_comments', 'project_start_date'
-#                                             'project_end_date', 'project_remarks','project_remarks')
-#     for row in rows:
-#         row_num += 1
-#         for col_num in range(len(row)):
-#             ws.write(row_num, col_num, row[col_num], font_style)
-
-#     wb.save(response)
-
-#     return response
+    #     except:
+    #         fs = FileSystemStorage(location=str(settings.MEDIA_ROOT)+'/documents/'+ current_time)
 
 
-# def export_styling_xls(request):
-#     response = HttpResponse(content_type='application/ms-excel')
-#     response['Content-Disposition'] = 'attachment; filename="projects.xls"'
+    #     new_file_name,ext=os.path.splitext(writer.path)
+    #     modified_name = '{}_{}{}'.format(new_file_name, current_time,ext)
 
-#     wb = xlwt.Workbook(encoding='utf-8')
-#     ws = wb.add_sheet('Styling Data') # this will make a sheet named Users Data - First Sheet
-#     styles = dict(
-#         bold = 'font: bold 1',
-#         italic = 'font: italic 1',
-#         # Wrap text in the cell
-#         wrap_bold = 'font: bold 1; align: wrap 1;',
-#         # White text on a blue background
-#         reversed = 'pattern: pattern solid, fore_color blue; font: color white;',
-#         # Light orange checkered background
-#         light_orange_bg = 'pattern: pattern fine_dots, fore_color white, back_color orange;',
-#         # Heavy borders
-#         bordered = 'border: top thick, right thick, bottom thick, left thick;',
-#         # 16 pt red text
-#         big_red = 'font: height 320, color red;',
-#     )
+    #     excel_attachment=fs.save(modified_name, report_name)
+    #     excel_file_url = fs.url('/documents/'+current_time+"/"+ excel_attachment)
 
-#     for idx, k in enumerate(sorted(styles)):
-#         style = xlwt.easyxf(styles[k])
-#         ws.write(idx, 0, k)
-#         ws.write(idx, 1, styles[k], style)
+    #     save_path = os.path.join(str(settings.MEDIA_ROOT)+'/documents/'+current_time,str(modified_name))
+    #     saved_file_name, file_extension=os.path.splitext(save_path)
 
-#     wb.save(response)
+    #     full_file_url=str(excel_file_url)
+    #     file_name=writer.path
 
-#     return response
-
-
-
-# def export_write_xls(request):
-#     response = HttpResponse(content_type='application/ms-excel')
-#     response['Content-Disposition'] = 'attachment; filename="projects.xls"'
-
-#     path = os.path.dirname(__file__)
-#     file = os.path.join(path, 'sample.xls')
-
-#     rb = open_workbook(file, formatting_info=True)
-#     r_sheet = rb.sheet_by_index(0)
-
-#     wb = copy(rb)
-#     ws = wb.get_sheet(0)
-
-#     row_num = 2 # index start from 0
-#     rows = report.objects.all().values_list('report_id', 'project_client', 'project_description', 'project_members',
-#                                             'project_status', 'project_remarks','project_comments', 'project_start_date'
-#                                             'project_end_date', 'project_remarks','project_remarks')
-
-#     for row in rows:
-#         row_num += 1
-#         for col_num in range(len(row)):
-#             ws.write(row_num, col_num, row[col_num])
-
-#     # wb.save(file) # will replace original file
-#     # wb.save(file + '.out' + os.path.splitext(file)[-1]) # will save file where the excel file is
-#     wb.save(response)
-
-
-
+    #     return export_write_xls(success=True,full_file_url=full_file_url,file_name=file_name)
 
 
 
@@ -580,7 +499,7 @@ class UpdateRole(graphene.Mutation):
 class Mutation(graphene.ObjectType):
 
 
-    Create_Report = CreateReport.Field()
+    # Create_Report = CreateReport.Field()
 
     Create_Task = CreateTask.Field()
     Update_Task = UpdateTask.Field()
@@ -593,6 +512,9 @@ class Mutation(graphene.ObjectType):
     Update_Project = UpdateProject.Field()
     Delete_Project = DeleteProject.Field()
 
+    # Generate_Report = export_write_xls.Field()
+
     Create_Enrollment = CreateEnrollment.Field()
     Delete_Enrollment = DeleteEnrollment.Field()
+
 

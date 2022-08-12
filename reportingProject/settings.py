@@ -129,6 +129,8 @@ GRAPHQL_JWT = {
     ],
 }
 
+MEDIA_ROOT = 'media/'
+
 
 DATABASES = {
 

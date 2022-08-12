@@ -1,9 +1,11 @@
 # quickstart.schema.py
 
 import graphene
-import CRUD_BACKEND.schema
+import CRUD_BACKEND.mutations as mutation
+import CRUD_BACKEND.query as query
 from graphql_auth.schema import UserQuery, MeQuery
 from graphql_auth import mutations
+
 
 class AuthMutation(graphene.ObjectType):
     register = mutations.Register.Field()
@@ -19,7 +21,7 @@ class AuthMutation(graphene.ObjectType):
     verify_secondary_email = mutations.VerifySecondaryEmail.Field()
     swap_emails = mutations.SwapEmails.Field()
 
-    # django-graphql-jwt inheritances
+
     token_auth = mutations.ObtainJSONWebToken.Field()
     verify_token = mutations.VerifyToken.Field()
     refresh_token = mutations.RefreshToken.Field()
@@ -27,10 +29,10 @@ class AuthMutation(graphene.ObjectType):
 
 
 
-class Query(CRUD_BACKEND.schema.Query, UserQuery, MeQuery, graphene.ObjectType):
+class Query(query.Query, UserQuery, MeQuery, graphene.ObjectType):
     pass
 
-class Mutation(CRUD_BACKEND.schema.Mutation, AuthMutation, graphene.ObjectType):
+class Mutation(mutation.Mutation, AuthMutation, graphene.ObjectType):
     pass
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

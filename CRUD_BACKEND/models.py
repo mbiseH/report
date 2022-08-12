@@ -39,7 +39,6 @@ class enrollment(models.Model):
 
 
 
-
 class tasks(models.Model):
     task_id = models.BigAutoField(primary_key=True)
     task_description = models.CharField(max_length=255)
@@ -61,7 +60,7 @@ class report(models.Model):
     task_completion_date = models.DateField()
     task_status = models.CharField(max_length=50)
     project_name = models.CharField(max_length=255,  unique=True)
-    # project_members
+    # project_members = models.
     project_status = models.CharField(max_length=255)
     project_start_date = models.DateField()
     project_end_date = models.DateField()

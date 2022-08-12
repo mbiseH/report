@@ -1,0 +1,549 @@
+
+
+
+# <-------------------MUTATIONS FIRST------------------------------>
+
+
+
+# mutation CreateProject(
+# $projectClient: String!,
+# $projectComments: String!
+# $projectDescription: String!
+# $projectEndDate: String!
+# $projectLeaderId: String
+# $projectMembers: [UserInput]
+# $projectName: String!
+# $projectRemarks: String!
+# $projectStartDate: String!
+# $projectStatus: String!){
+#   CreateProject(
+#     projectClient:$projectClient
+#     projectComments:$projectComments
+#     projectDescription :$projectDescription
+#     projectEndDate:$projectEndDate
+#     projectLeaderId:$projectLeaderId
+#     projectMembers:$projectMembers
+#     projectName: $projectName
+#     projectRemarks:$projectRemarks
+#     projectStartDate: $projectStartDate
+#     projectStatus: $projectStatus
+# )
+
+#   {
+#     project
+#     {
+#       projectName
+#       projectMembers {
+#         id
+#         username
+#       }
+#       projectId
+#     }
+#   }
+#   {
+#   "projectClient" : "wizara",
+# "projectComments":"jkjkjhkj" ,
+# "projectDescription": "iujkhj",
+# "projectEndDate": "2023-12-02",
+# "projectLeaderId": "VXNlck5vZGU6Mg==",
+# "projectName":"DevSecOps",
+# "projectRemarks": "jjhgjhf",
+# "projectStartDate": "2022-11-09",
+# "projectStatus":"iuyuytu"
+# }
+# }
+
+
+
+
+
+
+# mutation verifyAccount
+# {
+#   verifyAccount(token:"eyJ1c2VybmFtZSI6InVzZXIxIiwiYWN0aW9uIjoiYWN0aXZhdGlvbiJ9:1oM7tP:EUMFpAOISdHz_YSqL61EBDAFzG_6l6omKAynWNspckk")
+#   {
+#     success
+#   }
+# }
+
+
+
+
+
+
+
+
+# mutation register(
+# $email: String!
+# $username: String!
+# $password1: String!
+# $password2: String!
+# )
+
+# {
+#   register(
+#     email:$email, 
+#     username:$username, 
+# 		password1: $password1, 
+#     password2:$password2){
+#   success
+#   errors
+# }
+
+#    {
+#   "email": "user4@gmail.com",
+# "username": "user4",
+# "password1": "user4password",
+# "password2":"user4password"
+#   }   
+# }
+
+
+
+
+
+
+
+
+
+
+
+#   mutation CreateEnrollment(
+#     $projectId: ID!,
+#     $userId:ID!)
+#     {
+#       CreateEnrollment(
+#         projectId:$projectId, 
+#         userId:$userId)
+#       {
+#         enrollment{
+#           enrollmentDate
+#         }
+#       }
+
+
+#       {
+#   "projectId": "12",
+#   "userId": "VXNlck5vZGU6MQ=="
+# }
+#     }
+
+
+
+
+
+
+
+
+
+# mutation DeleteProject($projectId: ID!)
+# {
+#   DeleteProject(projectId:$projectId)
+#   {
+#     project
+#     {
+#       projectName
+#     }
+#   }
+
+#       {
+#       "projectId":"12"
+#     }
+# }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#     mutation deleteEnrollment
+#     {
+#       DeleteEnrollment
+#       (projectId:"8", userIdToBeRemoved:"VXNlck5vZGU6MQ==")
+#       {
+#         enrollment
+#         {
+#           enrollmentId
+#         }
+#       }
+#     }
+
+
+
+
+
+
+
+
+#     mutation UpdateProject(
+# $projectClient: String
+# $projectComments: String
+# $projectDescription: String
+# $projectEndDate: Date
+# $projectId: ID!
+# $projectLeaderId: ID
+# $projectName: String
+# $projectRemarks: String
+# $projectStartDate: Date
+# $projectStatus: String
+#     )
+#     {
+#       UpdateProject(
+#           projectClient: $projectClient
+#           projectComments: $projectComments
+#           projectDescription: $projectDescription
+#           projectEndDate: $projectEndDate
+#           projectId: $projectId
+#           projectLeaderId: $projectLeaderId
+#           projectName: $projectName
+#           projectRemarks: $projectRemarks
+#           projectStartDate: $projectStartDate
+#           projectStatus: $projectStatus
+#       )
+#       {
+#         project
+#         {
+#         projectId
+#         projectName
+#         projectStatus
+#         projectStartDate
+#         projectEndDate
+#         projectClient
+#         projectDescription
+#         projectComments
+#         projectRemarks
+#         projectLeader {
+#           username
+#         }
+
+#         tasksSet
+#         {
+#           taskId
+#         }
+#         projectMembers{
+#           username
+
+#         }
+#       }
+#     }
+#       {
+#   "projectId":12, 
+#   "projectClient": "TCRA",
+#   "projectComments": "Great",
+#   "projectDescription": "No Description",
+#   "projectEndDate": "2022-09-07",
+#   "projectLeaderId": "VXNlck5vZGU6MQ==",
+#   "projectName": "DevSecOps",
+#   "projectRemarks":"Done",
+#   "projectStartDate": "2022-09-07",
+#   "projectStatus":"Completed"
+# }
+
+#     }
+
+
+
+
+
+
+
+
+
+
+
+
+# mutation CreateTask (
+# $projectId: ID!
+# $taskCompletionDate: Date!
+# $taskDescription: String!
+# $taskStartDate: Date!
+# $taskStatus: String!
+# $userId: ID!
+# ){
+#   CreateTask(
+#     projectId:$projectId, 
+#     taskStatus:$taskStatus, 
+#     taskCompletionDate:$taskCompletionDate, 
+#     taskDescription:$taskDescription, 
+#   taskStartDate:$taskStartDate, 
+#     userId:$userId)
+#   {
+#     task
+#     {
+#       taskStartDate
+#     }
+#   }
+
+#    {
+#   "projectId":1, 
+#   "taskStatus":"MM", 
+#     "taskCompletionDate":"2022-09-08",
+#   "taskDescription":"hjhj", 
+#   "taskStartDate":"2022-09-09", 
+#   "userId":"VXNlck5vZGU6MQ=="
+# }
+# }
+
+
+
+
+
+
+
+
+
+
+
+# mutation DeleteTask($taskId: ID!){
+#   DeleteTask(
+#     taskId:$taskId)
+#   {
+#     task
+#     {
+#       taskStatus
+#     }
+#   }
+#   {
+#   "taskId":"5"
+# }
+
+# }    
+
+
+
+
+
+
+
+
+
+
+
+# <------------------------------------QUERIES NOW------------------------------>
+
+
+
+
+
+
+
+
+# query allProjects
+# {
+#   allProjects{
+#     projectName
+#     projectId
+#     projectMembers {
+#       id
+#     }
+#   }
+# }
+
+
+
+
+
+
+
+# query allusers{
+#   users{
+#     edges
+#     {
+#       node{
+#         id
+#         username
+#       }
+#     }
+#   }
+# }
+
+
+
+
+
+
+
+
+
+
+
+#     query allProjects{
+#   allProjects{
+#     projectId
+#     projectName
+#     projectStartDate
+#     projectEndDate
+#     projectLeader
+#     {
+#       username
+#     }
+#     projectMembers {
+#       id
+#     }
+#   }
+# }
+
+
+
+
+
+
+
+# query user{
+#   user(id:"VXNlck5vZGU6Mg==")
+#   {
+#     username
+#   }
+# }
+
+
+
+
+
+#    query allEnrollments {
+#       allEnrollments
+#       {
+#         enrollmentId
+# 				projectId
+#         {
+#           projectId
+#         }
+# userId {
+#   id
+# }
+# enrollmentDate
+# projectName
+#       }
+#     }
+
+
+
+
+
+
+
+
+#     query oneProject{
+#       oneProject(projectId:"12")
+#       {
+#         projectId
+#         projectName
+#         projectStatus
+#         projectStartDate
+#         projectEndDate
+#         projectClient
+#         projectDescription
+#         projectComments
+#         projectRemarks
+#         projectLeader
+#         {
+#           username
+#         id
+#         }
+
+#         tasksSet
+#         {
+#           taskId
+#         }
+#         projectMembers{
+#           id
+
+#         }
+#       }
+#     }
+
+
+
+
+
+
+
+
+# query allEnrollments{
+#   allEnrollments
+#   {
+#     enrollmentId
+#     projectName
+#     userId
+#     {
+#       username
+#       id
+#     }
+#   }
+# }    
+
+
+
+
+
+
+
+
+# query allTasksForAProject($projectId: ID){
+#   allTasksForAProject(
+#     projectId:$projectId)
+#   {
+
+#     taskId
+#   }
+#   {
+#   "projectId":1
+# }
+# }
+
+
+
+
+
+
+
+
+
+# query allEnrollments
+# {
+#   allEnrollments
+#   {
+#     enrollmentId
+#   }
+# }
+
+
+
+
+
+
+
+
+
+# query allTasksForAProject($projectId: ID)
+# {
+#   allTasksForAProject(
+#     projectId:$projectId
+#   )
+#   {
+
+#     taskStatus
+#     taskDescription
+
+#   }
+
+#   {
+#   "projectId":"8"
+# }
+# }
+
+
+
+
