@@ -1,11 +1,17 @@
 
+from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
 class role(models.Model):
     role_id = models.BigAutoField(primary_key=True)
-    role_name = models.CharField(max_length=255, choices=[("Prog.", "Programmer"), ('BA', 'Business Analyst'), ('Mgr','Manager')])
+    role_name = models.CharField(max_length=255)
+    role_creation_date = models.DateTimeField(default=datetime.now)
+
+    def __str__(self):
+        return self.role_name
+
 
 
 class user(AbstractUser):
@@ -39,7 +45,7 @@ class enrollment(models.Model):
 
 
 
-class tasks(models.Model):
+class task(models.Model):
     task_id = models.BigAutoField(primary_key=True)
     task_description = models.CharField(max_length=255)
     task_start_date = models.DateField()
