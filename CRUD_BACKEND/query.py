@@ -107,5 +107,5 @@ class Query(graphene.ObjectType):
 
 
 
-
+all_projects_of_a_particular_user = graphene.List(project_type, project_id=graphene.ID(required=True), user_id=graphene.ID(required=True))
 

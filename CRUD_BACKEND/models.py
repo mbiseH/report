@@ -76,3 +76,6 @@ class report(models.Model):
     project_remarks = models.CharField(max_length=255)
     project_leader = models.ForeignKey(user, null=True, on_delete=models.CASCADE)
 
+
+
+

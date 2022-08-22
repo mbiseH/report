@@ -22,3 +22,5 @@ admin.site.register(task)
 admin.site.register(report)
 admin.site.register(project)
 admin.site.register(user, CustomUserAdmin)
+
+# Register your models here.
