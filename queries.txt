@@ -7,24 +7,20 @@
 
 # mutation CreateProject(
 # $projectClient: String!,
-# $projectComments: String!
 # $projectDescription: String!
-# $projectEndDate: String!
-# $projectLeaderId: String
-# $projectMembers: [UserInput]
+# $projectEndDate: Date!
+# $projectLeaderId: String!
+# $projectMembers: [UserInput]!
 # $projectName: String!
-# $projectRemarks: String!
-# $projectStartDate: String!
+# $projectStartDate: Date!
 # $projectStatus: String!){
 #   CreateProject(
 #     projectClient:$projectClient
-#     projectComments:$projectComments
 #     projectDescription :$projectDescription
 #     projectEndDate:$projectEndDate
 #     projectLeaderId:$projectLeaderId
 #     projectMembers:$projectMembers
 #     projectName: $projectName
-#     projectRemarks:$projectRemarks
 #     projectStartDate: $projectStartDate
 #     projectStatus: $projectStatus
 # )
@@ -33,34 +29,29 @@
 #     project
 #     {
 #       projectName
-#       projectMembers {
-#         id
-#         username
-#       }
 #       projectId
-#     }
-#   }
-#   {
+#   } 
+#     success
+# }
+#      {
 #   "projectClient" : "wizara",
-# "projectComments":"jkjkjhkj" ,
 # "projectDescription": "iujkhj",
-# "projectEndDate": "2023-12-02",
-# "projectLeaderId": "VXNlck5vZGU6Mg==",
-# "projectName":"DevSecOps",
-# "projectRemarks": "jjhgjhf",
-# "projectStartDate": "2022-11-09",
-# "projectStatus":"iuyuytu"
-# }
-# }
+# "projectEndDate": "2022-08-02",
+# "projectLeaderId": "VXNlck5vZGU6MQ==",
+# "projectName":"New projekt",
+# "projectStartDate": "2022-03-09",
+# "projectStatus":"iuyuytu",
+# "projectMembers" : [{"id": "VXNlck5vZGU6MQ=="}]
+# }  
 
-
+# }
 
 
 
 
 # mutation verifyAccount
 # {
-#   verifyAccount(token:"eyJ1c2VybmFtZSI6InVzZXIxIiwiYWN0aW9uIjoiYWN0aXZhdGlvbiJ9:1oM7tP:EUMFpAOISdHz_YSqL61EBDAFzG_6l6omKAynWNspckk")
+#   verifyAccount(token:"eyJ1c2VybmFtZSI6ImVkd2luIiwiYWN0aW9uIjoiYWN0aXZhdGlvbiJ9:1oQ7zE:D-rc-3c3hkMY5MCO0goKtajLDHMXOTSnZ08mH-rGtcU")
 #   {
 #     success
 #   }
@@ -68,7 +59,36 @@
 
 
 
+#  CreateRole($roleName: String)
+# {
+  
+# {
+#   "roleName": "Programmer"
+# }
 
+# mutation hjksk{
+#   CreateRole(
+#     roleName:"Manager"
+#   )
+#   {
+#     role
+#     {
+#       roleId
+#       roleName
+#     }
+#   }
+# }
+
+
+
+# query jk
+# {
+#   allRoles{
+#     roleId
+#     roleName
+#     roleCreationDate
+#   }
+# }
 
 
 
@@ -91,10 +111,10 @@
 # }
 
 #    {
-#   "email": "user4@gmail.com",
-# "username": "user4",
-# "password1": "user4password",
-# "password2":"user4password"
+#   "email": "edwin@gmail.com",
+# "username": "edwin",
+# "password1": "edwinpassword",
+# "password2":"edwinpassword"
 #   }   
 # }
 
@@ -145,19 +165,10 @@
 #       projectName
 #     }
 #   }
-
-#       {
-#       "projectId":"12"
+#      {
+#       "projectId":13
 #     }
 # }
-
-
-
-
-
-
-
-
 
 
 
@@ -260,52 +271,6 @@
 
 
 
-
-
-
-
-# mutation CreateTask (
-# $projectId: ID!
-# $taskCompletionDate: Date!
-# $taskDescription: String!
-# $taskStartDate: Date!
-# $taskStatus: String!
-# $userId: ID!
-# ){
-#   CreateTask(
-#     projectId:$projectId, 
-#     taskStatus:$taskStatus, 
-#     taskCompletionDate:$taskCompletionDate, 
-#     taskDescription:$taskDescription, 
-#   taskStartDate:$taskStartDate, 
-#     userId:$userId)
-#   {
-#     task
-#     {
-#       taskStartDate
-#     }
-#   }
-
-#    {
-#   "projectId":1, 
-#   "taskStatus":"MM", 
-#     "taskCompletionDate":"2022-09-08",
-#   "taskDescription":"hjhj", 
-#   "taskStartDate":"2022-09-09", 
-#   "userId":"VXNlck5vZGU6MQ=="
-# }
-# }
-
-
-
-
-
-
-
-
-
-
-
 # mutation DeleteTask($taskId: ID!){
 #   DeleteTask(
 #     taskId:$taskId)
@@ -340,16 +305,13 @@
 
 
 
-# query allProjects
-# {
-#   allProjects{
-#     projectName
-#     projectId
-#     projectMembers {
-#       id
-#     }
-#   }
-# }
+query allProjects
+{
+  allProjects{
+    projectName
+    projectId
+  }
+}
 
 
 
@@ -364,6 +326,10 @@
 #       node{
 #         id
 #         username
+#         role
+#         {
+#           roleName
+#         }
 #       }
 #     }
 #   }
@@ -379,27 +345,6 @@
 
 
 
-#     query allProjects{
-#   allProjects{
-#     projectId
-#     projectName
-#     projectStartDate
-#     projectEndDate
-#     projectLeader
-#     {
-#       username
-#     }
-#     projectMembers {
-#       id
-#     }
-#   }
-# }
-
-
-
-
-
-
 
 # query user{
 #   user(id:"VXNlck5vZGU6Mg==")
@@ -407,6 +352,20 @@
 #     username
 #   }
 # }
+
+
+
+
+
+
+# query me{
+#   me
+#   {
+#     id
+#     username
+#   }
+# }
+
 
 
 
@@ -491,25 +450,6 @@
 
 
 
-# query allTasksForAProject($projectId: ID){
-#   allTasksForAProject(
-#     projectId:$projectId)
-#   {
-
-#     taskId
-#   }
-#   {
-#   "projectId":1
-# }
-# }
-
-
-
-
-
-
-
-
 
 # query allEnrollments
 # {
@@ -543,6 +483,205 @@
 #   "projectId":"8"
 # }
 # }
+
+
+
+
+
+
+
+
+# mutation tokenAuth (
+# $password: String!,
+# $username: String
+# ){
+#   tokenAuth(
+#     username: $username, 
+#     password: $password
+#   ) {
+#     success,
+#     errors,
+#     unarchiving,
+#     token,
+#     refreshToken,
+#     unarchiving,
+#     user {
+#       id,
+#       username,
+#     }
+#   }
+  
+#   {
+#   "password": "user2password",
+#   "username":"user2"
+# }
+# }
+
+
+
+
+# query allDelayedProjects
+# {
+#   allDelayedProjects
+#   {
+#     projectName
+#   }
+# }
+
+
+
+# mutattion CreateReport{
+
+# CreateReport(reportEndDate: Date!reportStartDate: Date!)
+#   {
+    
+#   }
+
+# }
+
+
+
+
+
+
+
+
+
+
+
+
+query allTasksForAUserPerWeekPerProject{
+  allTasksForAUserPerWeekPerProject(
+    projectId:1
+  userId: 1)
+  
+  {
+    
+    taskId
+  }
+}
+
+# mutation updatetask{
+#   UpdateTask(taskId:6,
+#   taskStartDate:"2022-08-13")
+#   {
+#     task{
+#       taskId
+#       taskStartDate
+#     }
+#   }
+# }
+
+
+
+
+
+
+
+# mutation CreateTask (
+# $projectId: ID!
+# $taskCompletionDate: Date!
+# $taskDescription: String!
+# $taskStartDate: Date!
+# $taskStatus: String!
+# $userId: ID!
+# ){
+#   CreateTask(
+#     projectId:$projectId, 
+#     taskStatus:$taskStatus, 
+#     taskCompletionDate:$taskCompletionDate, 
+#     taskDescription:$taskDescription, 
+#   taskStartDate:$taskStartDate, 
+#     userId:$userId)
+#   {
+#     task
+#     {
+#       taskStartDate
+#       projectId{
+#         projectId
+#       }
+#     }
+#   }
+#   {
+#   "projectId":1, 
+#   "taskStatus":"task ya mbise ", 
+#     "taskCompletionDate":"2022-08-10",
+#   "taskDescription":"hjhj", 
+#   "taskStartDate":"2022-08-25", 
+#   "userId":"VXNlck5vZGU6MQ=="
+# }
+  
+# }
+
+
+
+
+
+
+# query allTasksForAProject(
+#   $projectId: ID!)
+#   {
+#   allTasksForAProject(
+#     projectId:$projectId)
+#   {
+
+#     taskId
+#     taskStartDate
+    
+
+# }
+#          {
+  
+#   "projectId":1
+# }
+
+#   }
+
+
+
+
+# query CreateReport(
+#   $reportEndDate: Date!,
+#   $reportStartDate: Date!){
+
+# createReport(
+#   reportEndDate: $reportEndDate,
+#   reportStartDate: $reportStartDate)
+#   {
+#     taskStatus
+#     projectId
+#     {
+#       projectName
+#     }
+#   }
+# {
+#   "reportEndDate" : "2023-10-01",
+#   "reportStartDate" :"2020-09-01"
+# }
+# }
+
+
+
+
+
+
+
+# query allProjectsOfAParticularUser($userId: ID!)
+# {
+#  allProjectsOfAParticularUser(userId: $userId) {
+#   projectName
+# }
+
+#    {
+#   "userId" : "VXNlck5vZGU6MQ=="
+# }
+
+# }
+
+
+
+
+
 
 
 

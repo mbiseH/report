@@ -1,8 +1,10 @@
 
+from typing import List
 import  graphene
 from datetime import date, timedelta, datetime
 from graphql_jwt.decorators import login_required
 from CRUD_BACKEND.models import task, project, enrollment, role
+from graphql_relay import from_global_id
 from CRUD_BACKEND.mutations import project_type, enrollment_type, role_type, task_type
 
 
@@ -107,5 +109,39 @@ class Query(graphene.ObjectType):
 
 
 
-all_projects_of_a_particular_user = graphene.List(project_type, project_id=graphene.ID(required=True), user_id=graphene.ID(required=True))
+
+
+    create_report = graphene.List(task_type, report_start_date = graphene.Date(required = True),report_end_date = graphene.Date(required=True))
+    def resolve_create_report(self, info,report_start_date, report_end_date ):
+
+        all_tasks = task.objects.all()
+
+        report_start_date_unix_time  = datetime.timestamp(datetime(report_start_date.year, report_start_date.month, report_start_date.day))
+        report_end_date_unix_time = datetime.timestamp(datetime(report_end_date.year, report_end_date.month, report_end_date.day))
+
+        List=[]
+        for tuple in all_tasks:
+            task_start_date_unix_time = datetime.timestamp(datetime( tuple.task_start_date.year, tuple.task_start_date.month, tuple.task_start_date.day))
+            task_end_date_unix_time  = datetime.timestamp(datetime( tuple.task_completion_date.year, tuple.task_completion_date.month, tuple.task_completion_date.day))
+
+            if task_start_date_unix_time >= report_start_date_unix_time and task_end_date_unix_time <= report_end_date_unix_time:
+                List.append(tuple)
+        return List
+
+
+
+
+    all_projects_of_a_particular_user = graphene.List(project_type, user_id=graphene.ID(required=True))
+
+
+    def resolve_all_projects_of_a_particular_user(self, info,user_id):
+        # id = from_global_id(user_id)[1]
+        List =[]
+        all_projects = project.objects.filter()
+        for tuple in all_projects:
+            if user_id in tuple.project_members.all():
+                List.append (tuple)
+        return List
+
+
 

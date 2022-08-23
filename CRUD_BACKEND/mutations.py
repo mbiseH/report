@@ -372,63 +372,6 @@ class CreateRole(graphene.Mutation):
 
 
 
-class CreateReport(graphene.Mutation):
-
-    class  Arguments:
-        # project_id = graphene.ID(required=True)
-        report_start_date = graphene.Date(required = True)
-        report_end_date = graphene.Date(required=True)
-
-
-    report = graphene.List(task_type)
-    try:
-        # @login_required
-        def mutate(self, info, report_start_date, report_end_date):
-                all_tasks = task.objects.all()
-
-                try:
-                    report_start_date_unix_time  = datetime.timestamp(datetime(report_start_date.year, report_start_date.month, report_start_date.day))
-                    report_end_date_unix_time = datetime.timestamp(datetime(report_end_date.year, report_end_date.month, report_end_date.day))
-
-                    List=[]
-                    for tuple in all_tasks:
-                        task_start_date_unix_time = datetime.timestamp(datetime( tuple.task_start_date.year, tuple.task_start_date.month, tuple.task_start_date.day))
-                        task_end_date_unix_time  = datetime.timestamp(datetime( tuple.task_completion_date.year, tuple.task_completion_date.month, tuple.task_completion_date.day))
-
-                        if task_start_date_unix_time >= report_start_date_unix_time and task_end_date_unix_time <= report_end_date_unix_time:
-                            List.append(tuple)
-
-                    # task_queryset  = task.objects.filter(project_id= project_id).values
-                    # ('task_description','task_start_date', 'task_completion_date', 'task_status')
-
-                    # createdReport, created = report.objects.get_or_create (
-                    # report_start_date = report_start_date,
-                    # report_end_date = report_end_date,
-                    # # task_description = task_object.task_description,
-                    # # task_start_date = task_object.task_start_date,
-                    # # task_completion_date = task_object.task_completion_date,
-                    # # task_status = task_object.task_object,
-                    # project_name = project_object.project_name,
-                    # project_members = project_object.project_members,
-                    # project_status = project_object.project_status,
-                    # project_start_date = project_object.project_start_date,
-                    # project_end_date = project_object.project_end_date,
-                    # project_client = project_object.project_client,
-                    # project_description = project_object.project_description,
-                    # project_comments = project_object.project_comments,
-                    # project_remarks = project_object.project_name,
-                    # project_leader = project_object.project_leader)
-
-                    return CreateReport( report= List)
-                
-                except project.DoesNotExist:
-                 raise GraphQLError("project does not exist")
-    except:
-            raise GraphQLError("Ooops, something went wrong.")
-
-
-
-
 class UpdateRole(graphene.Mutation):
 
     class  Arguments:
@@ -518,7 +461,7 @@ class Mutation(graphene.ObjectType):
     Update_Project = UpdateProject.Field()
     Delete_Project = DeleteProject.Field()
 
-    Create_Report = CreateReport.Field()
+    # Create_Report = CreateReport.Field()
     # Generate_Report = export_write_xls.Field()
 
     Create_Enrollment = CreateEnrollment.Field()
