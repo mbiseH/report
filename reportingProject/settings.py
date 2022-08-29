@@ -116,10 +116,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    'http://172.17.17.237:8080',
-]
-
+# CORS_ALLOWED_ORIGINS = [
+#     'http://172.17.20.198:8080',
+# ]
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
@@ -244,3 +243,6 @@ INSTALLED_APPS = [
 ]
 
 ALLOWED_HOSTS = ['*']
+
+CORS_ALLOW_ALL_ORIGINS = True
+

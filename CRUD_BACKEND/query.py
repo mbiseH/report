@@ -81,31 +81,214 @@ class Query(graphene.ObjectType):
 
 
     all_completed_projects = graphene.List(project_type)
+    count_all_completed_projects_per_user = graphene.Int(username = graphene.String(required = True))
     on_hold_projects = graphene.List(project_type)
     all_delayed_projects = graphene.List(project_type)
+    count_on_hold_projects_per_user = graphene.Int(username = graphene.String(required = True))
+    count_all_completed_projects = graphene.Int()
+    count_all_delayed_projects = graphene.Int()
+    count_all_on_hold_projects = graphene.Int()
+    count_all_on_hold_projects_per_user = graphene.Int(username = graphene.String(required = True))
+    all_completed_projects_per_user= graphene.List(project_type, username = graphene.String(required = True))
+    all_on_hold_projects_per_user= graphene.List(project_type, username = graphene.String(required = True))
+    all_on_hold_projects = graphene.List(project_type)
+    all_on_progress_projects = graphene.List(project_type)
+    count_all_on_progress_projects = graphene.Int()
+    count_all_on_progress_projects_per_user = graphene.Int(username = graphene.String(required = True))
+    all_on_progress_projects_per_user =  graphene.List(project_type, username = graphene.String(required = True))
+
+
+
+
+
+
+
+    def resolve_all_on_hold_projects(self, info):
+        status = "OnHold"
+        List =[]
+        all_projects = project.objects.all()
+        for one_project in all_projects:
+            if one_project.project_status == status:
+                List.append(one_project)
+        return List
+
+    def resolve_count_all_on_hold_projects(self, info):
+        status = "OnHold"
+        List =[]
+        all_projects = project.objects.all()
+        for one_project in all_projects:
+            if one_project.project_status == status:
+                List.append(one_project)
+        return len(List)
+
+
+
+
+
+
+
+
+    def resolve_all_on_hold_projects_per_user(self, info, username):
+        status = "OnHold"
+        List =[]
+        all_projects = project.objects.all()
+        for one_project in all_projects:
+            if one_project.project_status == status:
+                userObjects = one_project.project_members.all()
+                for one_user in userObjects:
+                    if username == one_user.username:
+                        List.append(one_project)
+        return List
+
+
+    def resolve_count_all_on_hold_projects_per_user(self, info, username):
+        status = "OnHold"
+        List =[]
+        all_projects = project.objects.all()
+        for one_project in all_projects:
+            if one_project.project_status == status:
+                userObjects = one_project.project_members.all()
+                for one_user in userObjects:
+                    if username == one_user.username:
+                        List.append(one_project)
+        return len(List)
+
+
 
 
 
 
     def resolve_all_completed_projects(self, info):
         status = "Completed"
-        return project.objects.filter(task_status=status)
+        List =[]
+        all_projects = project.objects.all()
+        for one_project in all_projects:
+            if one_project.project_status == status:
+                List.append(one_project)
+        return List
 
 
-    def resolve_on_hold_projects(self, info, user_id):
-        status = "On Hold"
-        return project.objects.filter(staff_id=user_id).filter(task_status=status)
+    def resolve_count_all_completed_projects(self, info):
+        status = "Completed"
+        return project.objects.filter(project_status=status).count()
+
+
+
+
+
+
+
+    def resolve_all_completed_projects_per_user(self, info, username):
+        status = "Completed"
+        List =[]
+        all_projects = project.objects.all()
+        for one_project in all_projects:
+            if one_project.project_status == status:
+                userObjects = one_project.project_members.all()
+                for one_user in userObjects:
+                    if username == one_user.username:
+                        List.append(one_project)
+        return List
+
+    def resolve_count_all_completed_projects_per_user(self, info, username):
+        status = "Completed"
+        List =[]
+        all_projects = project.objects.all()
+        for one_project in all_projects:
+            if one_project.project_status == status:
+                userObjects = one_project.project_members.all()
+                for one_user in userObjects:
+                    if username == one_user.username:
+                        List.append(one_project)
+        return len(List)
+
+
+
 
 
     def resolve_all_delayed_projects(self, info):
-        current_time= datetime.timestamp(datetime.now())
+        current_unix_time= datetime.timestamp(datetime.now())
         queryset= project.objects.all()
         List = []
-        for tuple in queryset:
-                datetime_from_date = datetime( tuple.project_end_date.year, tuple.project_end_date.month, tuple.project_end_date.day)
-                if datetime.timestamp(datetime_from_date) > current_time:
-                    List.append(tuple)
+        for one_project in queryset:
+                datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
+                if current_unix_time > datetime.timestamp(datetime_from_date):
+                    List.append(one_project)
         return List
+
+
+    def resolve_count_all_delayed_projects(self, info):
+        current_unix_time= datetime.timestamp(datetime.now())
+        queryset= project.objects.all()
+        List = []
+        for one_project in queryset:
+                datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
+                if current_unix_time > datetime.timestamp(datetime_from_date):
+                    List.append(one_project)
+        return len(List)
+
+
+
+
+
+
+
+
+    def resolve_all_on_progress_projects(self, info):
+        current_unix_time= datetime.timestamp(datetime.now())
+        queryset= project.objects.all()
+        List = []
+        for one_project in queryset:
+                datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
+                if current_unix_time <= datetime.timestamp(datetime_from_date):
+                    List.append(one_project)
+        return List
+
+
+    def resolve_count_all_on_progress_projects(self, info):
+        current_unix_time= datetime.timestamp(datetime.now())
+        queryset= project.objects.all()
+        List = []
+        for one_project in queryset:
+                datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
+                if current_unix_time <= datetime.timestamp(datetime_from_date):
+                    List.append(one_project)
+        return len(List)
+
+
+
+
+
+
+
+    def resolve_all_on_progress_projects_per_user(self, info, username):
+        current_unix_time= datetime.timestamp(datetime.now())
+        queryset= project.objects.all()
+        List = []
+        for one_project in queryset:
+            datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
+            if current_unix_time <= datetime.timestamp(datetime_from_date):
+                userObjects = one_project.project_members.all()
+                for one_user in userObjects:
+                    if username == one_user.username:
+                        List.append(one_project)
+        return List
+
+
+    def resolve_count_all_on_progress_projects_per_user(self, info, username):
+        current_unix_time= datetime.timestamp(datetime.now())
+        queryset= project.objects.all()
+        List = []
+        for one_project in queryset:
+            datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
+            if current_unix_time <= datetime.timestamp(datetime_from_date):
+                userObjects = one_project.project_members.all()
+                for one_user in userObjects:
+                    if username == one_user.username:
+                        List.append(one_project)
+        return len(List)
+
+
 
 
 
@@ -131,16 +314,18 @@ class Query(graphene.ObjectType):
 
 
 
-    all_projects_of_a_particular_user = graphene.List(project_type, user_id=graphene.ID(required=True))
+    all_projects_of_a_particular_user = graphene.List(project_type, username=graphene.ID(required=True))
 
 
-    def resolve_all_projects_of_a_particular_user(self, info,user_id):
-        # id = from_global_id(user_id)[1]
+    def resolve_all_projects_of_a_particular_user(self, info,username):
         List =[]
-        all_projects = project.objects.filter()
-        for tuple in all_projects:
-            if user_id in tuple.project_members.all():
-                List.append (tuple)
+        all_projects = project.objects.all()
+        for one_project in all_projects:
+            userObjects = one_project.project_members.all()
+            for one_user in userObjects:
+                if username == one_user.username:
+                    List.append(one_project)
+
         return List
 
 
