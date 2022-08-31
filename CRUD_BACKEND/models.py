@@ -47,13 +47,12 @@ class enrollment(models.Model):
 
 class task(models.Model):
     task_id = models.BigAutoField(primary_key=True)
-    task_description = models.CharField(max_length=255)
+    task_description = models.CharField(max_length=255, unique=True)
     task_start_date = models.DateField()
     task_completion_date = models.DateField()
-    task_status = models.CharField(max_length=50)
+    task_status = models.CharField(max_length=50, default="OnHold")
     project_id = models.ForeignKey(project, on_delete=models.CASCADE)
     user_id = models.ForeignKey(user, on_delete=models.CASCADE)
-
 
 
 class report(models.Model):

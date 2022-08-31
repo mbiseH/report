@@ -7,7 +7,7 @@
 #     email: String!
 #   }
 
-# type Query {
+# type project_type {
 #     hello: $String!
 #     randomNumber: Int!
 #    queryUsers: [User]!

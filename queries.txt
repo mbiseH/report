@@ -296,6 +296,42 @@
 
 
 
+
+mutation CreateMultipleTasks(
+    $allTasks: [Task_Input]
+$projectId: ID!
+$taskCompletionDate: Date!
+$taskStartDate: Date!
+$userId: ID!
+$wayForwardTasks: [Task_Input])
+
+{
+  CreateMultipleTasks(allTasks:$allTasks,
+  projectId: $projectId,
+  taskCompletionDate:$taskCompletionDate,
+    taskStartDate :$taskStartDate,
+    userId : $userId,
+    wayForwardTasks:$wayForwardTasks
+  )
+  {
+    success
+  }
+  
+  {
+"allTasks": [{"taskDescription": "jhj"}, {"taskDescription": "kupika"}, {"taskDescription": "kufua"}],
+"projectId": "28",
+"taskCompletionDate": "2022-09-06",
+"taskStartDate": "2022-09-14",
+"userId": "VXNlck5vZGU6MQ==",
+  "wayForwardTasks":[{"taskDescription": "hj"}, {"taskDescription": "jjjj"}, {"taskDescription": "kkk"}]
+}
+
+
+}
+
+
+
+
 # <------------------------------------QUERIES NOW------------------------------>
 
 

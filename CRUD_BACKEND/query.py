@@ -1,5 +1,4 @@
 
-from typing import List
 import  graphene
 from datetime import date, timedelta, datetime
 from graphql_jwt.decorators import login_required
@@ -84,7 +83,6 @@ class Query(graphene.ObjectType):
     count_all_completed_projects_per_user = graphene.Int(username = graphene.String(required = True))
     on_hold_projects = graphene.List(project_type)
     all_delayed_projects = graphene.List(project_type)
-    count_on_hold_projects_per_user = graphene.Int(username = graphene.String(required = True))
     count_all_completed_projects = graphene.Int()
     count_all_delayed_projects = graphene.Int()
     count_all_on_hold_projects = graphene.Int()
@@ -96,7 +94,8 @@ class Query(graphene.ObjectType):
     count_all_on_progress_projects = graphene.Int()
     count_all_on_progress_projects_per_user = graphene.Int(username = graphene.String(required = True))
     all_on_progress_projects_per_user =  graphene.List(project_type, username = graphene.String(required = True))
-
+    all_delayed_projects_per_user = graphene.List(project_type, username = graphene.String(required = True))
+    count_all_delayed_projects_per_user =  graphene.Int(username = graphene.String(required = True))
 
 
 
@@ -142,7 +141,7 @@ class Query(graphene.ObjectType):
 
 
     def resolve_count_all_on_hold_projects_per_user(self, info, username):
-        status = "OnHold"
+        status = "Completed"
         List =[]
         all_projects = project.objects.all()
         for one_project in all_projects:
@@ -229,6 +228,34 @@ class Query(graphene.ObjectType):
 
 
 
+    def resolve_all_delayed_projects_per_user(self, info, username):
+        current_unix_time= datetime.timestamp(datetime.now())
+        all_projects= project.objects.all()
+        List = []
+        for one_project in all_projects:
+            datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
+            if current_unix_time > datetime.timestamp(datetime_from_date):
+                    userObjects = one_project.project_members.all()
+                    for one_user in userObjects:
+                        if username == one_user.username:
+                            List.append(one_project)
+        return List
+
+
+    def resolve_count_all_delayed_projects_per_user(self, info, username):
+        current_unix_time= datetime.timestamp(datetime.now())
+        all_projects= project.objects.all()
+        List = []
+        for one_project in all_projects:
+            datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
+            if current_unix_time > datetime.timestamp(datetime_from_date):
+                    userObjects = one_project.project_members.all()
+                    for one_user in userObjects:
+                        if username == one_user.username:
+                            List.append(one_project)
+        return len(List)
+
+
 
 
 
@@ -286,7 +313,10 @@ class Query(graphene.ObjectType):
                 for one_user in userObjects:
                     if username == one_user.username:
                         List.append(one_project)
-        return len(List)
+        if len(List)!=None:
+            return len(List)
+        else:
+            return 0
 
 
 

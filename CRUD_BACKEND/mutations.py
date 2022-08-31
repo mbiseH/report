@@ -1,6 +1,6 @@
 
 import  graphene
-from datetime import datetime, date
+from datetime import datetime, timedelta
 from graphql import GraphQLError
 from django.conf import settings
 from graphql_relay import from_global_id
@@ -40,6 +40,8 @@ class UserInput(graphene.InputObjectType):
     id = graphene.ID(required=True)
     username = graphene.String()
 
+class Task_Input(graphene.InputObjectType):
+    task_description = graphene.String(required=True)
 
 
 
@@ -67,34 +69,32 @@ class CreateProject(graphene.Mutation):
                 project_name, project_status,project_start_date, project_end_date,
                 project_client,project_description, project_leader_id, project_members):
 
+
                     try:
-                        try:
-                            project_leader_id = from_global_id(project_leader_id)[1]
-                            userObject = user.objects.get(pk=project_leader_id)
-                        except:
-                            raise GraphQLError("The project Leader does not exist.")
-
-
-                        createdProject, created= project.objects.get_or_create (
-                                                    project_name = project_name,
-                                                    project_status = project_status,
-                                                    project_start_date = project_start_date,
-                                                    project_end_date = project_end_date,
-                                                    project_client = project_client,
-                                                    project_description = project_description,
-                                                    project_leader = userObject,
-                                    )
-                        # li = list(string.split("-"))
-                        for one_member in project_members:
-                            member_id = from_global_id(one_member.id)[1]
-                            createdProject.project_members.add(member_id)
-                            createdProject.save()
-
-
-                        return CreateProject( project = createdProject, success=created)
-
+                        project_leader = from_global_id(project_leader_id)[1]
+                        userObject = user.objects.get(pk=project_leader)
                     except:
-                        raise GraphQLError("This project exists!")
+                        raise GraphQLError("A problem occurred in fetching the project Leader.")
+
+
+                    createdProject, created= project.objects.get_or_create (
+                                                project_name = project_name,
+                                                project_status = project_status,
+                                                project_start_date = project_start_date,
+                                                project_end_date = project_end_date,
+                                                project_client = project_client,
+                                                project_description = project_description,
+                                                project_leader = userObject,
+                                )
+
+                    for one_member in project_members:
+                        member_id = from_global_id(one_member.id)[1]
+                        createdProject.project_members.add(member_id)
+                        createdProject.save()
+
+
+                    return CreateProject( project = createdProject, success=created)
+
 
     except:
         raise GraphQLError("Dear User, A problem occurred during the project creation!")
@@ -294,7 +294,9 @@ class CreateTask(graphene.Mutation):
                         task_status = task_status,
                         project_id = projectObject,
                         task_start_date = task_start_date,
-                        user_id=userObject)
+                        user_id=userObject,
+                        # way_forward =way_forward
+                        )
 
                     return CreateTask(task = createdTask, success = created)
 
@@ -304,6 +306,58 @@ class CreateTask(graphene.Mutation):
         raise GraphQLError("A problem occurred.")
 
 
+
+
+class BatchCreateTask(graphene.Mutation):
+
+    class  Arguments:
+
+        all_tasks = graphene.List(of_type = Task_Input)
+        way_forward_tasks = graphene.List(of_type = Task_Input)
+        task_start_date = graphene.Date(required = True)
+        task_completion_date = graphene.Date(required = True)
+        project_id = graphene.ID(required = True)
+        user_id = graphene.ID(required = True)
+
+    # createdTasks = graphene.List(task_type)
+    success = graphene.Boolean()
+
+    try:
+        # @login_required
+        def mutate(self, info,user_id, task_completion_date,project_id,task_start_date, way_forward_tasks=None , all_tasks =None ):
+
+            id = from_global_id(user_id)[1]
+            userObject = user.objects.get(pk=id)
+            projectObject = project.objects.get(pk=project_id)
+
+            if all_tasks is not None:
+                for one_task in all_tasks:
+
+                        createdTask, created= task.objects.get_or_create (
+                            task_description= one_task.task_description,
+                            task_completion_date = task_completion_date,
+                            project_id = projectObject,
+                            task_start_date = task_start_date,
+                            user_id=userObject
+                            )
+                        success = created
+
+            if way_forward_tasks is not None:
+                for one_task in way_forward_tasks:
+
+                        createdTask, created= task.objects.get_or_create (
+                            task_description= one_task.task_description,
+                            task_start_date = datetime.date(datetime.now()),
+                            task_completion_date = datetime.date(datetime.now()) + timedelta(days=7),
+                            project_id = projectObject,
+                            user_id=userObject
+                            )
+                        success = created
+
+            return BatchCreateTask(success=success)
+
+    except:
+        raise GraphQLError("A problem occurred.")
 
 
 class UpdateTask(graphene.Mutation):
@@ -466,5 +520,6 @@ class Mutation(graphene.ObjectType):
 
     Create_Enrollment = CreateEnrollment.Field()
     Delete_Enrollment = DeleteEnrollment.Field()
+    Create_Multiple_Tasks = BatchCreateTask.Field()
 
 
