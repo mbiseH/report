@@ -20,17 +20,36 @@ class user(AbstractUser):
     EMAIL_FIELD = "email"
 
 
+
+
+class project_categories(models.Model):
+    category_id = models.BigAutoField(primary_key=True)
+    category_name = models.CharField(max_length=255, unique=True)
+    creation_date = models.DateTimeField(auto_now_add=True)
+
+
+
+class status(models.Model):
+    status_id = models.BigAutoField(primary_key=True)
+    status_name = models.CharField(max_length=255, unique=True)
+    status_description = models.CharField(max_length=255)
+    creation_date = models.DateTimeField(auto_now_add=True)
+
+
+
+
 class project(models.Model):
     project_id = models.BigAutoField(primary_key=True)
     project_name = models.CharField(max_length=255,  unique=True)
     project_members = models.ManyToManyField(user, related_name = 'project_members_for_a_particular_project', default=None)
-    project_status = models.CharField(max_length=255)
     project_start_date = models.DateField(auto_now_add=True)
     project_end_date = models.DateField()
     project_client = models.CharField(max_length=255)
     project_description = models.CharField(null=False, max_length=255)
     project_comments = models.CharField(max_length=255)
     project_remarks = models.CharField(max_length=255)
+    project_status = models.ForeignKey(status, null=True, default=None, on_delete=models.SET_NULL)
+    project_category = models.ForeignKey(project_categories, on_delete=models.SET_NULL, null=True)
     project_leader = models.ForeignKey(user, null=True, on_delete=models.CASCADE)
 
 
@@ -50,7 +69,8 @@ class task(models.Model):
     task_description = models.CharField(max_length=255, unique=True)
     task_start_date = models.DateField()
     task_completion_date = models.DateField()
-    task_status = models.CharField(max_length=50, default="OnHold")
+    task_status = models.ForeignKey(status, on_delete=models.SET_DEFAULT, default="Ongoing")
+    task_blocking_issue = models.CharField(max_length=255, default=None, null=True)
     project_id = models.ForeignKey(project, on_delete=models.CASCADE)
     user_id = models.ForeignKey(user, on_delete=models.CASCADE)
 

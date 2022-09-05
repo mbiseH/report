@@ -1,5 +1,8 @@
 
+import os
+from unicodedata import category
 import  graphene
+import pandas as pd
 from datetime import datetime, timedelta
 from graphql import GraphQLError
 from django.conf import settings
@@ -8,13 +11,24 @@ from graphene_django import DjangoObjectType
 from graphql_jwt.decorators import login_required
 from django.core.files.storage import FileSystemStorage
 from graphql_jwt.decorators import staff_member_required
-from CRUD_BACKEND.models import role, task, project, user, report, enrollment
+from CRUD_BACKEND.models import role, task, project, user, status, report, enrollment, project_categories
 
 
 
 class role_type(DjangoObjectType):
     class Meta:
         model = role
+
+
+
+class status_type(DjangoObjectType):
+    class  Meta:
+        model = status
+
+
+class category_type(DjangoObjectType):
+    class Meta:
+        model = project_categories
 
 class enrollment_type(DjangoObjectType):
     class Meta:
@@ -279,31 +293,36 @@ class CreateTask(graphene.Mutation):
     task = graphene.Field(task_type)
     success = graphene.Boolean(required=True)
 
-    try:
-        # @login_required
-        def mutate(self, info, task_description , user_id, task_completion_date, task_status,project_id, task_start_date ):
 
+        # @login_required
+    def mutate(self, info, task_description , user_id, task_completion_date, task_status,project_id, task_start_date ):
+        try:
             id = from_global_id(user_id)[1]
             userObject = user.objects.get(pk=id)
+        except user.DoesNotExist:
+            raise GraphQLError("User does not exist")
+        try:
             projectObject = project.objects.get(pk=project_id)
+            userObjects = projectObject.project_members.all()
 
-            if projectObject is not None:
+            created=False
+            for member in userObjects:
+                if member.username == userObject.username:
                     createdTask, created= task.objects.get_or_create (
-                        task_description= task_description,
-                        task_completion_date = task_completion_date,
-                        task_status = task_status,
-                        project_id = projectObject,
-                        task_start_date = task_start_date,
-                        user_id=userObject,
-                        # way_forward =way_forward
-                        )
-
+                    task_description= task_description,
+                    task_completion_date = task_completion_date,
+                    task_status = task_status,
+                    project_id = projectObject,
+                    task_start_date = task_start_date,
+                    user_id=userObject,)
+            if created:
                     return CreateTask(task = createdTask, success = created)
-
             else:
-                raise GraphQLError("The project you are trying to create a task does not exist")
-    except:
-        raise GraphQLError("A problem occurred.")
+                    return GraphQLError("Remember, task decription must be unique and User must be in project members.")
+
+        except project.DoesNotExist:
+            raise GraphQLError("Project Does not exist.")
+
 
 
 
@@ -312,10 +331,8 @@ class BatchCreateTask(graphene.Mutation):
 
     class  Arguments:
 
-        all_tasks = graphene.List(of_type = Task_Input)
+        workdone_tasks = graphene.List(of_type = Task_Input)
         way_forward_tasks = graphene.List(of_type = Task_Input)
-        task_start_date = graphene.Date(required = True)
-        task_completion_date = graphene.Date(required = True)
         project_id = graphene.ID(required = True)
         user_id = graphene.ID(required = True)
 
@@ -324,37 +341,35 @@ class BatchCreateTask(graphene.Mutation):
 
     try:
         # @login_required
-        def mutate(self, info,user_id, task_completion_date,project_id,task_start_date, way_forward_tasks=None , all_tasks =None ):
+        def mutate(self, info,user_id, project_id, way_forward_tasks=None , workdone_tasks =None ):
 
             id = from_global_id(user_id)[1]
             userObject = user.objects.get(pk=id)
             projectObject = project.objects.get(pk=project_id)
 
-            if all_tasks is not None:
-                for one_task in all_tasks:
+            if workdone_tasks is not None:
+                for one_task in workdone_tasks:
 
                         createdTask, created= task.objects.get_or_create (
                             task_description= one_task.task_description,
-                            task_completion_date = task_completion_date,
+                            task_start_date = datetime.date(datetime.now())- timedelta(days=6),
+                            task_completion_date = datetime.date(datetime.now()) ,
                             project_id = projectObject,
-                            task_start_date = task_start_date,
                             user_id=userObject
                             )
-                        success = created
 
             if way_forward_tasks is not None:
                 for one_task in way_forward_tasks:
 
                         createdTask, created= task.objects.get_or_create (
                             task_description= one_task.task_description,
-                            task_start_date = datetime.date(datetime.now()),
+                            task_start_date = datetime.date(datetime.now())+ timedelta(days=1),
                             task_completion_date = datetime.date(datetime.now()) + timedelta(days=7),
                             project_id = projectObject,
                             user_id=userObject
                             )
-                        success = created
 
-            return BatchCreateTask(success=success)
+            return BatchCreateTask(success=created)
 
     except:
         raise GraphQLError("A problem occurred.")
@@ -365,6 +380,7 @@ class UpdateTask(graphene.Mutation):
         class  Arguments:
             task_id =  graphene.ID(required= True)
             task_description =  graphene.String()
+            task_blocking_issue =  graphene.String()
             task_completion_date = graphene.Date()
             task_start_date = graphene.Date()
             task_status = graphene.String()
@@ -372,7 +388,7 @@ class UpdateTask(graphene.Mutation):
         task = graphene.Field(task_type)
 
         # @login_required
-        def mutate(self, info, task_id,task_start_date =None, task_description=None , task_completion_date=None, task_status=None):
+        def mutate(self, info, task_id,task_start_date =None, task_blocking_issue=None, task_description=None , task_completion_date=None, task_status=None):
 
             updatedTask = task.objects.get(pk=task_id)
 
@@ -380,6 +396,7 @@ class UpdateTask(graphene.Mutation):
                 updatedTask.task_description = task_description if task_description is not None else  updatedTask.task_description
                 updatedTask.task_status = task_status if task_status is not None else updatedTask.task_status
                 updatedTask.task_completion_date = task_completion_date if task_completion_date is not None else updatedTask.task_completion_date
+                updatedTask.task_blocking_issue = task_blocking_issue if task_blocking_issue is not None else updatedTask.task_blocking_issue
                 updatedTask.task_start_date = task_start_date if task_start_date is not None else updatedTask.task_start_date
 
                 updatedTask.save()
@@ -450,59 +467,185 @@ class UpdateRole(graphene.Mutation):
 
 
 
+from django.core import files
 
-# class export_write_xls(graphene.Mutation):
+class ExportExcel(graphene.Mutation):
 
-    # class Arguments:
-    #     enrollment_id = graphene.ID(required=True)
+    class Arguments:
+        enrollment_id = graphene.ID()
 
-    # success = graphene.Boolean()
-    # full_file_url = graphene.String()
-    # file_name = graphene.String()
+    success = graphene.Boolean()
+    full_file_url = graphene.String()
+    file_name = graphene.String()
 
-    # def mutate(self, info,  enrollment_id, **kwargs):
-    #     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    #     report_name = 'WeeklyReport ' +str(current_time)+'.xlsx'
+    def mutate(self, info, **kwargs):
+        current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        report_name = 'WeeklyReport ' +str(current_time)+'.xlsx'
 
-    #     writer = pd.ExcelWriter(report_name, engine='xlsxwriter')
-    #     # data = enrollment.objects.filter(enrollment_id=enrollment_id)
-    #     data = enrollment.objects.all()
-    #     df = pd.DataFrame(data)
-    #     df.to_excel(writer, sheet_name='Weekly Report', index=False)
-    #     writer.save()
-
-
-    #     try:
-    #         if os.mkdir(os.path.join(str(settings.MEDIA_ROOT)+'/documents/', current_time)):
-    #             pass
-    #         else:
-    #             raise GraphQLError ("Folder Exists")
-    #         fs = FileSystemStorage(location=str(settings.MEDIA_ROOT)+'/documents/'+ current_time)
-
-    #     except:
-    #         fs = FileSystemStorage(location=str(settings.MEDIA_ROOT)+'/documents/'+ current_time)
+        writer = pd.ExcelWriter(report_name, engine='xlsxwriter')
+        data = enrollment.objects.all()
+        df = pd.DataFrame(data)
+        df.to_excel(writer, sheet_name='Weekly Report', index=False)
+        writer.save()
 
 
-    #     new_file_name,ext=os.path.splitext(writer.path)
-    #     modified_name = '{}_{}{}'.format(new_file_name, current_time,ext)
+        try:
+            if os.mkdir(os.path.join(str(settings.MEDIA_ROOT)+'/documents/', current_time)):
+                pass
+            else:
+                raise GraphQLError ("Folder Exists")
+            fs = FileSystemStorage(location=str(settings.MEDIA_ROOT)+'/documents/'+ current_time)
 
-    #     excel_attachment=fs.save(modified_name, report_name)
-    #     excel_file_url = fs.url('/documents/'+current_time+"/"+ excel_attachment)
+        except:
+            fs = FileSystemStorage(location=str(settings.MEDIA_ROOT)+'/documents/'+ current_time)
 
-    #     save_path = os.path.join(str(settings.MEDIA_ROOT)+'/documents/'+current_time,str(modified_name))
-    #     saved_file_name, file_extension=os.path.splitext(save_path)
+        new_file_name,ext=os.path.splitext(writer.path)
+        modified_name = '{}_{}{}'.format(new_file_name, current_time,ext)
 
-    #     full_file_url=str(excel_file_url)
-    #     file_name=writer.path
+        reportFileObject = files.File( writer, name=modified_name)
+        excel_attachment=fs.save(modified_name,reportFileObject )
+        excel_file_url = fs.url('/documents/'+current_time+"/"+ excel_attachment)
 
-    #     return export_write_xls(success=True,full_file_url=full_file_url,file_name=file_name)
+        save_path = os.path.join(str(settings.MEDIA_ROOT)+'/documents/'+current_time,str(modified_name))
+        saved_file_name, file_extension=os.path.splitext(save_path)
+
+        full_file_url=str(excel_file_url)
+        file_name=writer.path
+
+        return ExportExcel(success=True,full_file_url=full_file_url,file_name=file_name)
+
+
+
+
+
+class CreateCategory(graphene.Mutation):
+    class Arguments:
+        category_name = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    created_category_object = graphene.Field(category_type)
+
+    def mutate(self, info, category_name, **kwargs):
+        try:
+            createdCategory, created = project_categories.objects.get_or_create(
+                category_name = category_name
+            )
+            return CreateCategory(created_category_object = createdCategory,success = created)
+        except:
+            return GraphQLError("Error Occured, please try again.")
+
+
+
+
+
+class UpdateCategory(graphene.Mutation):
+    class  Arguments:
+        category_id = graphene.ID(required=True)
+        category_name = graphene.ID(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info,category_id,category_name, **kwargs ):
+        try:
+            category_object = project_categories.objects.get(category_id = category_id)
+        except project_categories.DoesNotExist:
+            raise GraphQLError("Category not found!")
+        try:
+            category_object.category_name = category_name
+            category_object.save()
+            return UpdateCategory(success=True)
+        except:
+            raise GraphQLError("Error Occured, please try again.")
+
+
+
+class DeleteCategory(graphene.Mutation):
+    class  Arguments:
+        category_id = graphene.ID(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info,category_id,**kwargs ):
+        try:
+
+            category_object = project_categories.objects.get(category_id = category_id)
+            category_object.delete()
+            return UpdateCategory(success=True)
+
+        except project_categories.DoesNotExist:
+            raise GraphQLError("Category not found!")
+
+
+
+
+
+
+
+class CreateStatus(graphene.Mutation):
+    class Arguments:
+        status_name = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    created_status_object = graphene.Field(status_type)
+
+    def mutate(self, info, status_name, **kwargs):
+
+            createdStatus, created = status.objects.get_or_create(
+                status_name = status_name
+            )
+            return CreateStatus(created_status_object = createdStatus, success = created)
+
+
+
+
+
+
+class UpdateStatus(graphene.Mutation):
+    class  Arguments:
+        status_id = graphene.ID(required=True)
+        status_name = graphene.ID(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info, status_id,status_name, **kwargs ):
+        try:
+            status_object = status.objects.get(status_id = status_id)
+        except status.DoesNotExist:
+            raise GraphQLError("Status not found!")
+        try:
+            status_object.status_name = status_name
+            status_object.save()
+            if status_object.status_name == status_name:
+                return UpdateStatus(success=True)
+            else:
+                return GraphQLError("Status could not be updated.")
+        except:
+            raise GraphQLError("Error Occured, please try again.")
+
+
+
+class DeleteStatus(graphene.Mutation):
+    class  Arguments:
+        status_id = graphene.ID(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info,status_id,**kwargs ):
+        try:
+
+            status_object = status.objects.get(status_id = status_id)
+            status_object.delete()
+            return UpdateStatus(success=True)
+
+        except status.DoesNotExist:
+            raise GraphQLError("Status not found!")
+
+
 
 
 
 
 class Mutation(graphene.ObjectType):
-
-
 
     Create_Task = CreateTask.Field()
     Update_Task = UpdateTask.Field()
@@ -515,11 +658,26 @@ class Mutation(graphene.ObjectType):
     Update_Project = UpdateProject.Field()
     Delete_Project = DeleteProject.Field()
 
+
+
     # Create_Report = CreateReport.Field()
-    # Generate_Report = export_write_xls.Field()
+    Testing_Export_Excel = ExportExcel.Field()
 
     Create_Enrollment = CreateEnrollment.Field()
     Delete_Enrollment = DeleteEnrollment.Field()
     Create_Multiple_Tasks = BatchCreateTask.Field()
+
+
+    Create_Project_Category = CreateCategory.Field()
+    Update_Project_Category = UpdateCategory.Field()
+    Delete_Project_Category = DeleteCategory.Field()
+
+
+    Create_Status = CreateStatus.Field()
+    Update_Status = UpdateStatus.Field()
+    Delete_Status = DeleteStatus.Field()
+
+
+
 
 
