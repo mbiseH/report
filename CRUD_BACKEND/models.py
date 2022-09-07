@@ -1,4 +1,5 @@
 
+
 from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -29,6 +30,8 @@ class project_categories(models.Model):
     category_id = models.BigAutoField(primary_key=True)
     category_name = models.CharField(max_length=255, unique=True)
     creation_date = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['category_name']
     def str(self):
             return self.category_name
 
@@ -38,9 +41,10 @@ class status(models.Model):
     status_name = models.CharField(max_length=255, unique=True)
     status_description = models.CharField(max_length=255)
     creation_date = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['status_name']
     def str(self):
             return self.status_name
-
 
 
 
@@ -57,6 +61,10 @@ class project(models.Model):
     project_status = models.ForeignKey(status, null=True, default=None, on_delete=models.SET_NULL)
     project_category = models.ForeignKey(project_categories, on_delete=models.SET_NULL, null=True)
     project_leader = models.ForeignKey(user, null=True, on_delete=models.CASCADE)
+
+
+    class Meta:
+        ordering = ['project_name']
     def str(self):
             return self.project_name
 
@@ -80,7 +88,8 @@ class task(models.Model):
     task_blocking_issue = models.CharField(max_length=255, default=None, null=True)
     project_id = models.ForeignKey(project, on_delete=models.CASCADE)
     user_id = models.ForeignKey(user, on_delete=models.CASCADE)
-
+    class Meta:
+        ordering = ['-task_start_date']
 
 class report(models.Model):
     report_id = models.BigAutoField(primary_key=True)

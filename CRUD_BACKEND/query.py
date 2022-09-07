@@ -5,18 +5,31 @@ from datetime import date, timedelta, datetime
 from graphql_jwt.decorators import login_required
 from CRUD_BACKEND.models import task, project, status, enrollment, role, project_categories
 from graphql_relay import from_global_id
+from django.core.paginator import Paginator
 from CRUD_BACKEND.mutations import project_type, status_type, enrollment_type, category_type, role_type, task_type
-
+from django.http import JsonResponse
 
 
 class Query(graphene.ObjectType):
 
-    all_projects= graphene.List(project_type)
-    one_project = graphene.Field(project_type, project_id = graphene.ID())
+    all_projects= graphene.List(of_type=project_type)
+    one_project = graphene.Field(project_type, project_id = graphene.ID(), entries_per_page= graphene.Int(),page_number= graphene.Int() )
 
     # @login_required
-    def resolve_all_projects(self, info, **kwargs):
-        return project.objects.all()
+    def resolve_all_projects(self, info, page_number=1, entries_per_page=10, **kwargs, ):
+        all_projects = project.objects.all()
+        paginator = Paginator(all_projects, entries_per_page)
+        project_entries_per_page = paginator.get_page(page_number)
+        payload = {
+            "page": {
+                "current": project_entries_per_page.number,
+                "has_next": project_entries_per_page.has_next(),
+                "has_previous": project_entries_per_page.has_previous(),
+                "Some refence List":list(paginator.get_elided_page_range(page_number, on_each_side=1, on_ends=1))
+            },
+            "data": list (project_entries_per_page)
+        }
+        return JsonResponse(payload)
 
     def resolve_one_project(self, info,project_id):
         return project.objects.get(project_id=project_id)
@@ -443,7 +456,7 @@ class Query(graphene.ObjectType):
 
 
 
-    manager_summary_report = graphene.List(project_type)
+    manager_summary_report = graphene.List(task_type)
 
     def resolve_manager_summary_report(self,info,**kwargs):
         all_projects = project.objects.all()
@@ -459,10 +472,10 @@ class Query(graphene.ObjectType):
                     end_date_unix_time = datetime.timestamp(datetime( one_task.task_completion_date.year, one_task.task_completion_date.month, one_task.task_completion_date.day))
 
                     if  current_unix_time - start_date_unix_time >=0 and current_unix_time - start_date_unix_time <= 7*86400:
-                        workdone_tasks_for_all_projects.append(one_project)
+                        workdone_tasks_for_all_projects.append(one_task)
 
                     elif end_date_unix_time - current_unix_time >=0 and  end_date_unix_time - current_unix_time <= 6*86400:
-                        wayforward_tasks_for_all_projects.append(one_project)
+                        wayforward_tasks_for_all_projects.append(one_task)
 
         summary_report = wayforward_tasks_for_all_projects + workdone_tasks_for_all_projects
         return summary_report
