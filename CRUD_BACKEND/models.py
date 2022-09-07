@@ -18,6 +18,9 @@ class user(AbstractUser):
     role = models.ForeignKey(role,null=True, on_delete=models.SET_NULL)
     USERNAME_FIELD = "username"
     EMAIL_FIELD = "email"
+    def str(self):
+            return self.username
+
 
 
 
@@ -26,7 +29,8 @@ class project_categories(models.Model):
     category_id = models.BigAutoField(primary_key=True)
     category_name = models.CharField(max_length=255, unique=True)
     creation_date = models.DateTimeField(auto_now_add=True)
-
+    def str(self):
+            return self.category_name
 
 
 class status(models.Model):
@@ -34,6 +38,8 @@ class status(models.Model):
     status_name = models.CharField(max_length=255, unique=True)
     status_description = models.CharField(max_length=255)
     creation_date = models.DateTimeField(auto_now_add=True)
+    def str(self):
+            return self.status_name
 
 
 
@@ -51,7 +57,8 @@ class project(models.Model):
     project_status = models.ForeignKey(status, null=True, default=None, on_delete=models.SET_NULL)
     project_category = models.ForeignKey(project_categories, on_delete=models.SET_NULL, null=True)
     project_leader = models.ForeignKey(user, null=True, on_delete=models.CASCADE)
-
+    def str(self):
+            return self.project_name
 
 
 class enrollment(models.Model):
@@ -69,7 +76,7 @@ class task(models.Model):
     task_description = models.CharField(max_length=255, unique=True)
     task_start_date = models.DateField()
     task_completion_date = models.DateField()
-    task_status = models.ForeignKey(status, on_delete=models.SET_DEFAULT, default="Ongoing")
+    task_status = models.ForeignKey(status,null=True, on_delete=models.SET_NULL)
     task_blocking_issue = models.CharField(max_length=255, default=None, null=True)
     project_id = models.ForeignKey(project, on_delete=models.CASCADE)
     user_id = models.ForeignKey(user, on_delete=models.CASCADE)

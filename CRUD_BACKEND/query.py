@@ -1,4 +1,5 @@
 
+from typing import List
 import  graphene
 from datetime import date, timedelta, datetime
 from graphql_jwt.decorators import login_required
@@ -17,6 +18,9 @@ class Query(graphene.ObjectType):
     def resolve_all_projects(self, info, **kwargs):
         return project.objects.all()
 
+    def resolve_one_project(self, info,project_id):
+        return project.objects.get(project_id=project_id)
+
 
     all_categories= graphene.List(category_type)
     one_category = graphene.Field(category_type, category_id = graphene.ID())
@@ -24,6 +28,10 @@ class Query(graphene.ObjectType):
     # @login_required
     def resolve_all_categories(self, info, **kwargs):
         return project_categories.objects.all()
+
+
+    def resolve_one_category (self, info,category_id):
+        return project_categories.objects.get(category_id=category_id)
 
 
 
@@ -403,7 +411,7 @@ class Query(graphene.ObjectType):
                 all_members = one_project.project_members.all()
                 for one_member in all_members:
                     if one_member.username == username:
-                        all_tasks = one_project.taskSet.all()
+                        all_tasks = one_project.task_set.all()
                         for one_task in all_tasks:
                             datetime_from_date = datetime( one_task.task_start_date.year, one_task.task_start_date.month, one_task.task_start_date.day)
                             start_date_unix_time = datetime.timestamp(datetime_from_date)
@@ -423,7 +431,7 @@ class Query(graphene.ObjectType):
 
     count_total_projects_per_user= graphene.Int(username = graphene.String(required = True))
 
-    def resolve_count_total_projects_per_user(self,cls, info, username):
+    def resolve_count_total_projects_per_user(self,info, username):
         all_projects = project.objects.all()
         List =[]
         for one_project in all_projects:
@@ -432,3 +440,30 @@ class Query(graphene.ObjectType):
                 if one_user.username == username:
                     List.append(one_project)
         return len(List)
+
+
+
+    manager_summary_report = graphene.List(project_type)
+
+    def resolve_manager_summary_report(self,info,**kwargs):
+        all_projects = project.objects.all()
+        workdone_tasks_for_all_projects = []
+        wayforward_tasks_for_all_projects = []
+        summary_report=[]
+        current_unix_time= datetime.timestamp(datetime.now())
+
+        for one_project in all_projects:
+                all_tasks = one_project.task_set.all()
+                for one_task in all_tasks:
+                    start_date_unix_time = datetime.timestamp(datetime( one_task.task_start_date.year, one_task.task_start_date.month, one_task.task_start_date.day))
+                    end_date_unix_time = datetime.timestamp(datetime( one_task.task_completion_date.year, one_task.task_completion_date.month, one_task.task_completion_date.day))
+
+                    if  current_unix_time - start_date_unix_time >=0 and current_unix_time - start_date_unix_time <= 7*86400:
+                        workdone_tasks_for_all_projects.append(one_project)
+
+                    elif end_date_unix_time - current_unix_time >=0 and  end_date_unix_time - current_unix_time <= 6*86400:
+                        wayforward_tasks_for_all_projects.append(one_project)
+
+        summary_report = wayforward_tasks_for_all_projects + workdone_tasks_for_all_projects
+        return summary_report
+

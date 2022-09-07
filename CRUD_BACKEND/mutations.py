@@ -9,6 +9,7 @@ from django.conf import settings
 from graphql_relay import from_global_id
 from graphene_django import DjangoObjectType
 from graphql_jwt.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import FileSystemStorage
 from graphql_jwt.decorators import staff_member_required
 from CRUD_BACKEND.models import role, task, project, user, status, report, enrollment, project_categories
@@ -65,12 +66,13 @@ class CreateProject(graphene.Mutation):
 
         project_name = graphene.String(required= True)
         project_members = graphene.List(required=True,of_type=UserInput)
-        project_status = graphene.String(required= True)
+        project_status_id = graphene.String(required= True)
         project_start_date = graphene.Date(required= True)
         project_end_date = graphene.Date(required= True)
         project_client = graphene.String(required= True)
         project_description = graphene.String(required= True)
         project_leader_id = graphene.String(required=True)
+        project_category_id = graphene.ID(required=True)
 
     project = graphene.Field(project_type)
     success = graphene.Boolean(required=True)
@@ -79,35 +81,42 @@ class CreateProject(graphene.Mutation):
 
     try:
         # @staff_member_required
-        def mutate(self, info,
-                project_name, project_status,project_start_date, project_end_date,
+        def mutate(self, info, project_category_id,
+                project_name, project_status_id,project_start_date, project_end_date,
                 project_client,project_description, project_leader_id, project_members):
 
 
                     try:
                         project_leader = from_global_id(project_leader_id)[1]
                         userObject = user.objects.get(pk=project_leader)
-                    except:
+                        try:
+                            project_category_object = project_categories.objects.get(pk = project_category_id )
+
+                            try:
+                                project_status_object = status.objects.get(pk = project_status_id)
+                                createdProject, created= project.objects.get_or_create (
+                                                            project_name = project_name,
+                                                            project_status = project_status_object,
+                                                            project_start_date = project_start_date,
+                                                            project_end_date = project_end_date,
+                                                            project_client = project_client,
+                                                            project_description = project_description,
+                                                            project_leader = userObject,
+                                                            project_category=project_category_object)
+
+                                if project_members is not None:
+                                    for one_member in project_members:
+                                        member_id = from_global_id(one_member.id)[1]
+                                        createdProject.project_members.add(member_id)
+                                        createdProject.save()
+                                        return CreateProject( project = createdProject, success=created)
+                            except status.DoesNotExist:
+                                raise GraphQLError("Status does not exist")
+                        except project_categories.DoesNotExist:
+                            raise GraphQLError("Category does not exist")
+                    except user.DoesNotExist:
                         raise GraphQLError("A problem occurred in fetching the project Leader.")
 
-
-                    createdProject, created= project.objects.get_or_create (
-                                                project_name = project_name,
-                                                project_status = project_status,
-                                                project_start_date = project_start_date,
-                                                project_end_date = project_end_date,
-                                                project_client = project_client,
-                                                project_description = project_description,
-                                                project_leader = userObject,
-                                )
-
-                    for one_member in project_members:
-                        member_id = from_global_id(one_member.id)[1]
-                        createdProject.project_members.add(member_id)
-                        createdProject.save()
-
-
-                    return CreateProject( project = createdProject, success=created)
 
 
     except:
@@ -335,41 +344,48 @@ class BatchCreateTask(graphene.Mutation):
         way_forward_tasks = graphene.List(of_type = Task_Input)
         project_id = graphene.ID(required = True)
         user_id = graphene.ID(required = True)
+        status_id = graphene.ID(required = True)
 
     # createdTasks = graphene.List(task_type)
     success = graphene.Boolean()
 
     try:
         # @login_required
-        def mutate(self, info,user_id, project_id, way_forward_tasks=None , workdone_tasks =None ):
+        def mutate(self, info, status_id, user_id, project_id, way_forward_tasks=None , workdone_tasks =None ):
 
-            id = from_global_id(user_id)[1]
-            userObject = user.objects.get(pk=id)
-            projectObject = project.objects.get(pk=project_id)
+            try:
+                id = from_global_id(user_id)[1]
+                userObject = user.objects.get(pk=id)
+                projectObject = project.objects.get(pk=project_id)
+                status_object = status.objects.get(pk=status_id)
+                if workdone_tasks is not None:
+                    for one_task in workdone_tasks:
 
-            if workdone_tasks is not None:
-                for one_task in workdone_tasks:
+                            createdTask, created= task.objects.get_or_create (
+                                task_description= one_task.task_description,
+                                task_start_date = datetime.date(datetime.now())- timedelta(days=6),
+                                task_completion_date = datetime.date(datetime.now()) ,
+                                project_id = projectObject,
+                                user_id=userObject,
+                                task_status=status_object
+                                )
 
-                        createdTask, created= task.objects.get_or_create (
-                            task_description= one_task.task_description,
-                            task_start_date = datetime.date(datetime.now())- timedelta(days=6),
-                            task_completion_date = datetime.date(datetime.now()) ,
-                            project_id = projectObject,
-                            user_id=userObject
-                            )
+                if way_forward_tasks is not None:
+                    for one_task in way_forward_tasks:
 
-            if way_forward_tasks is not None:
-                for one_task in way_forward_tasks:
+                            createdTask, created= task.objects.get_or_create (
+                                task_description= one_task.task_description,
+                                task_start_date = datetime.date(datetime.now())+ timedelta(days=1),
+                                task_completion_date = datetime.date(datetime.now()) + timedelta(days=7),
+                                project_id = projectObject,
+                                user_id=userObject,
+                                task_status=status_object
+                                )
 
-                        createdTask, created= task.objects.get_or_create (
-                            task_description= one_task.task_description,
-                            task_start_date = datetime.date(datetime.now())+ timedelta(days=1),
-                            task_completion_date = datetime.date(datetime.now()) + timedelta(days=7),
-                            project_id = projectObject,
-                            user_id=userObject
-                            )
+                return BatchCreateTask(success=created)
+            except ObjectDoesNotExist:
+                raise GraphQLError("The user, status or the project you are creating task for, does not exist")
 
-            return BatchCreateTask(success=created)
 
     except:
         raise GraphQLError("A problem occurred.")
