@@ -19,7 +19,7 @@ class user(AbstractUser):
     role = models.ForeignKey(role,null=True, on_delete=models.SET_NULL)
     USERNAME_FIELD = "username"
     EMAIL_FIELD = "email"
-    def str(self):
+    def __str__(self):
             return self.username
 
 
@@ -32,18 +32,18 @@ class project_categories(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ['category_name']
-    def str(self):
+    def __str__(self):
             return self.category_name
 
 
 class status(models.Model):
     status_id = models.BigAutoField(primary_key=True)
     status_name = models.CharField(max_length=255, unique=True)
-    status_description = models.CharField(max_length=255)
+    status_description = models.CharField(max_length=255, null=True, default=None)
     creation_date = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ['status_name']
-    def str(self):
+    def __str__(self):
             return self.status_name
 
 
@@ -65,7 +65,7 @@ class project(models.Model):
 
     class Meta:
         ordering = ['project_name']
-    def str(self):
+    def __str__(self):
             return self.project_name
 
 
@@ -75,6 +75,10 @@ class enrollment(models.Model):
     user_id = models.ForeignKey(user, on_delete=models.CASCADE)
     enrollment_date = models.DateTimeField(auto_now_add=True)
     project_name = models.CharField(max_length=255)
+    class Meta:
+        ordering = ['enrollment_id']
+    def __str__(self):
+            return self.enrollment_id
 
 
 
@@ -88,8 +92,13 @@ class task(models.Model):
     task_blocking_issue = models.CharField(max_length=255, default=None, null=True)
     project_id = models.ForeignKey(project, on_delete=models.CASCADE)
     user_id = models.ForeignKey(user, on_delete=models.CASCADE)
+
+
     class Meta:
-        ordering = ['-task_start_date']
+        ordering = ['task_description']
+    def __str__(self):
+            return self.task_description
+
 
 class report(models.Model):
     report_id = models.BigAutoField(primary_key=True)
