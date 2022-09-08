@@ -102,7 +102,6 @@ class CreateProject(graphene.Mutation):
                                                             project_description = project_description,
                                                             project_leader = userObject,
                                                             project_category=project_category_object)
-
                                 if project_members is not None:
                                     for one_member in project_members:
                                         member_id = from_global_id(one_member.id)[1]

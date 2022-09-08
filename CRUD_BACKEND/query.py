@@ -12,48 +12,72 @@ from django.http import JsonResponse
 
 class Query(graphene.ObjectType):
 
-    all_projects= graphene.List(of_type=project_type)
-    one_project = graphene.Field(project_type, project_id = graphene.ID(), entries_per_page= graphene.Int(),page_number= graphene.Int() )
+    count_total_projects = graphene.Int()
+    all_status= graphene.List(status_type)
+    all_projects= graphene.List(project_type)
+    count_all_delayed_projects = graphene.Int()
+    count_all_on_hold_projects = graphene.Int()
+    all_categories= graphene.List(category_type)
+    count_all_completed_projects = graphene.Int()
+    count_all_on_progress_projects = graphene.Int()
+    count_total_projects_per_user= graphene.Int(username = graphene.String(required = True))
+    count_all_on_hold_projects_per_user = graphene.Int(username = graphene.String(required = True))
+    count_all_delayed_projects_per_user =  graphene.Int(username = graphene.String(required = True))
+    count_all_completed_projects_per_user = graphene.Int(username = graphene.String(required = True))
+    count_all_on_progress_projects_per_user = graphene.Int(username = graphene.String(required = True))
+    all_tasks= graphene.List(task_type,  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_roles = graphene.List(role_type,  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    on_hold_projects = graphene.List(project_type,  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_enrollments= graphene.List(enrollment_type,  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_delayed_projects = graphene.List(project_type, entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_on_hold_projects = graphene.List(project_type, entries_per_page= graphene.Int(),page_number= graphene.Int())
+    manager_summary_report = graphene.List(task_type,  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_completed_projects = graphene.List(project_type,  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_on_progress_projects = graphene.List(project_type,  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    one_status = graphene.Field(status_type, status_id = graphene.ID(),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    one_project = graphene.Field(project_type, project_id = graphene.ID(), entries_per_page= graphene.Int(),page_number= graphene.Int())
+    one_category = graphene.Field(category_type, category_id = graphene.ID(),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_tasks_for_a_user_per_week_per_project = graphene.List(task_type, project_id=graphene.ID(required=True), username=graphene.ID(required=True))
+    all_projects_of_a_particular_user = graphene.List(project_type, username=graphene.ID(required=True),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_on_hold_projects_per_user= graphene.List(project_type, username = graphene.String(required = True),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_delayed_projects_per_user = graphene.List(project_type, username = graphene.String(required = True),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_completed_projects_per_user= graphene.List(project_type, username = graphene.String(required = True),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_on_progress_projects_per_user =  graphene.List(project_type, username = graphene.String(required = True),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    get_any_week_tasks = graphene.List(task_type,  start_date = graphene.Date(required = True), end_date = graphene.Date(required=True), project_id = graphene.ID(required = True))
+    all_projects_per_user_and_tasks_for_the_past_week = graphene.List(project_type, username=graphene.String(required=True),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+    all_tasks_for_a_project_per_user = graphene.List(task_type, project_id=graphene.ID(required=True), username=graphene.String(required=True),  entries_per_page= graphene.Int(),page_number= graphene.Int())
+
+
+
+
 
     # @login_required
     def resolve_all_projects(self, info, page_number=1, entries_per_page=10, **kwargs, ):
-        all_projects = project.objects.all()
-        paginator = Paginator(all_projects, entries_per_page)
-        project_entries_per_page = paginator.get_page(page_number)
-        payload = {
-            "page": {
-                "current": project_entries_per_page.number,
-                "has_next": project_entries_per_page.has_next(),
-                "has_previous": project_entries_per_page.has_previous(),
-                "Some refence List":list(paginator.get_elided_page_range(page_number, on_each_side=1, on_ends=1))
-            },
-            "data": list (project_entries_per_page)
-        }
-        return JsonResponse(payload)
+        return Query.pagination(project.objects.all(),entries_per_page,page_number)
+
+
+    def pagination( query_set,entries_per_page, page_number):
+        paginator = Paginator(query_set, entries_per_page)
+        tuples_per_page = paginator.get_page(page_number)
+        return tuples_per_page
+
 
     def resolve_one_project(self, info,project_id):
         return project.objects.get(project_id=project_id)
 
 
-    all_categories= graphene.List(category_type)
-    one_category = graphene.Field(category_type, category_id = graphene.ID())
-
     # @login_required
-    def resolve_all_categories(self, info, **kwargs):
-        return project_categories.objects.all()
+    def resolve_all_categories(self, info, page_number=1, entries_per_page=5,**kwargs):
+        return Query.pagination(project_categories.objects.all(),entries_per_page,page_number)
 
 
     def resolve_one_category (self, info,category_id):
         return project_categories.objects.get(category_id=category_id)
 
 
-
-    all_status= graphene.List(status_type)
-    one_status = graphene.Field(status_type, status_id = graphene.ID())
-
     # @login_required
-    def resolve_all_status(self, info, **kwargs):
-        return status.objects.all()
+    def resolve_all_status(self, info, page_number=1, entries_per_page=10, **kwargs):
+        return Query.pagination(status.objects.all(),entries_per_page,page_number)
 
 
     # @login_required
@@ -61,41 +85,27 @@ class Query(graphene.ObjectType):
         return status.objects.get(pk=status_id)
 
 
-    all_tasks= graphene.List(task_type)
+    # @login_required
+    def resolve_all_tasks(self, info, page_number=1, entries_per_page=10, **kwargs):
+        return Query.pagination(task.objects.all(),entries_per_page,page_number)
+
 
     # @login_required
-    def resolve_all_tasks(self, info, **kwargs):
-        return task.objects.all()
-
-
-
-
-    all_tasks_for_a_project_per_user = graphene.List(task_type, project_id=graphene.ID(required=True), username=graphene.String(required=True))
-
-    # @login_required
-    def resolve_all_tasks_for_a_project_per_user(self, info, project_id, username):
+    def resolve_all_tasks_for_a_project_per_user(self, info, project_id, username, page_number=1, entries_per_page=10):
         all_tasks_for_the_project = task.objects.filter(project_id=project_id)
         List = []
         for tuple in all_tasks_for_the_project:
             if tuple.user_id.username == username:
                 List.append(tuple)
-        return List
+        return Query.pagination(List,entries_per_page,page_number)
 
-
-
-    all_enrollments= graphene.List(enrollment_type)
 
     # @login_required
-    def resolve_all_enrollments(self, info):
-        return enrollment.objects.all()
+    def resolve_all_enrollments(self, info, page_number=1, entries_per_page=10):
+        return Query.pagination(enrollment.objects.all(),entries_per_page,page_number)
 
 
-    all_tasks_for_a_user_per_week_per_project = graphene.List(
-        task_type, project_id=graphene.ID(required=True), username=graphene.ID(required=True))
-
-
-    def resolve_all_tasks_for_a_user_per_week_per_project(self, info, project_id, username,  **kwargs):
-
+    def resolve_all_tasks_for_a_user_per_week_per_project(self, info, project_id, username, page_number=1, entries_per_page=10, **kwargs):
         queryset = task.objects.filter(project_id=project_id)
         current_unix_time= datetime.timestamp(datetime.now())
         List =[]
@@ -106,54 +116,24 @@ class Query(graphene.ObjectType):
                 start_date_unix_time = datetime.timestamp(datetime_from_date)
                 if  current_unix_time - start_date_unix_time >=0 and current_unix_time - start_date_unix_time <= 7*86400:
                         List.append(tuple)
-        return List
+        return Query.pagination(List, entries_per_page, page_number)
 
 
-
-
-
-    all_roles = graphene.List(role_type)
     # @login_required
-    def resolve_all_roles(self, info, **kwargs):
-        return role.objects.all()
-
-
-
-
-
-
-    all_completed_projects = graphene.List(project_type)
-    count_all_completed_projects_per_user = graphene.Int(username = graphene.String(required = True))
-    on_hold_projects = graphene.List(project_type)
-    all_delayed_projects = graphene.List(project_type)
-    count_all_completed_projects = graphene.Int()
-    count_all_delayed_projects = graphene.Int()
-    count_all_on_hold_projects = graphene.Int()
-    count_all_on_hold_projects_per_user = graphene.Int(username = graphene.String(required = True))
-    all_completed_projects_per_user= graphene.List(project_type, username = graphene.String(required = True))
-    all_on_hold_projects_per_user= graphene.List(project_type, username = graphene.String(required = True))
-    all_on_hold_projects = graphene.List(project_type)
-    all_on_progress_projects = graphene.List(project_type)
-    count_all_on_progress_projects = graphene.Int()
-    count_all_on_progress_projects_per_user = graphene.Int(username = graphene.String(required = True))
-    all_on_progress_projects_per_user =  graphene.List(project_type, username = graphene.String(required = True))
-    all_delayed_projects_per_user = graphene.List(project_type, username = graphene.String(required = True))
-    count_all_delayed_projects_per_user =  graphene.Int(username = graphene.String(required = True))
-
-
-
+    def resolve_all_roles(self, info, page_number=1, entries_per_page=10, **kwargs):
+        return Query.pagination(role.objects.all(),entries_per_page,page_number)
 
 
     # @login_required
     # @staff_member_required
-    def resolve_all_on_hold_projects(self, info):
+    def resolve_all_on_hold_projects(self, info, page_number=1, entries_per_page=10):
         status = "OnHold"
         List =[]
         all_projects = project.objects.all()
         for one_project in all_projects:
             if one_project.project_status == status:
                 List.append(one_project)
-        return List
+        return Query.pagination(List, entries_per_page, page_number)
 
 
     # @login_required
@@ -168,13 +148,8 @@ class Query(graphene.ObjectType):
         return len(List)
 
 
-
-
-
-
-
     # @login_required
-    def resolve_all_on_hold_projects_per_user(self, info, username):
+    def resolve_all_on_hold_projects_per_user(self, info, username, page_number=1, entries_per_page=10):
         status = "OnHold"
         List =[]
         all_projects = project.objects.all()
@@ -184,7 +159,8 @@ class Query(graphene.ObjectType):
                 for one_user in userObjects:
                     if username == one_user.username:
                         List.append(one_project)
-        return List
+        return Query.pagination(List,entries_per_page,page_number)
+
 
     # @login_required
     def resolve_count_all_on_hold_projects_per_user(self, info, username):
@@ -200,19 +176,17 @@ class Query(graphene.ObjectType):
         return len(List)
 
 
-
-
-
     # @login_required
     # @staff_member_required
-    def resolve_all_completed_projects(self, info):
+    def resolve_all_completed_projects(self, info, page_number=1, entries_per_page=10):
         status = "Completed"
         List =[]
         all_projects = project.objects.all()
         for one_project in all_projects:
             if one_project.project_status == status:
                 List.append(one_project)
-        return List
+        return Query.pagination(List, entries_per_page,page_number)
+
 
     # @login_required
     # @staff_member_required
@@ -221,12 +195,8 @@ class Query(graphene.ObjectType):
         return project.objects.filter(project_status=status).count()
 
 
-
-
-
-
     # @login_required
-    def resolve_all_completed_projects_per_user(self, info, username):
+    def resolve_all_completed_projects_per_user(self, info, username, page_number=1, entries_per_page=10):
         status = "Completed"
         List =[]
         all_projects = project.objects.all()
@@ -236,7 +206,8 @@ class Query(graphene.ObjectType):
                 for one_user in userObjects:
                     if username == one_user.username:
                         List.append(one_project)
-        return List
+        return Query.pagination(List, entries_per_page,page_number)
+
 
     # @login_required
     def resolve_count_all_completed_projects_per_user(self, info, username):
@@ -252,11 +223,9 @@ class Query(graphene.ObjectType):
         return len(List)
 
 
-
-
     # @login_required
     # @staff_member_required
-    def resolve_all_delayed_projects(self, info):
+    def resolve_all_delayed_projects(self, info, page_number=1, entries_per_page=10):
         current_unix_time= datetime.timestamp(datetime.now())
         queryset= project.objects.all()
         List = []
@@ -264,7 +233,8 @@ class Query(graphene.ObjectType):
                 datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
                 if current_unix_time > datetime.timestamp(datetime_from_date):
                     List.append(one_project)
-        return List
+        return Query.pagination(List, entries_per_page,page_number)
+
 
     # @login_required
     # @staff_member_required
@@ -280,7 +250,7 @@ class Query(graphene.ObjectType):
 
 
     # @login_required
-    def resolve_all_delayed_projects_per_user(self, info, username):
+    def resolve_all_delayed_projects_per_user(self, info, username, page_number=1, entries_per_page=10):
         current_unix_time= datetime.timestamp(datetime.now())
         all_projects= project.objects.all()
         List = []
@@ -291,7 +261,8 @@ class Query(graphene.ObjectType):
                     for one_user in userObjects:
                         if username == one_user.username:
                             List.append(one_project)
-        return List
+        return Query.pagination(List, entries_per_page,page_number)
+
 
     # @login_required
     def resolve_count_all_delayed_projects_per_user(self, info, username):
@@ -308,13 +279,9 @@ class Query(graphene.ObjectType):
         return len(List)
 
 
-
-
-
-
     # @login_required
     # @staff_member_required
-    def resolve_all_on_progress_projects(self, info):
+    def resolve_all_on_progress_projects(self, info, page_number=1, entries_per_page=10):
         current_unix_time= datetime.timestamp(datetime.now())
         queryset= project.objects.all()
         List = []
@@ -322,7 +289,8 @@ class Query(graphene.ObjectType):
                 datetime_from_date = datetime( one_project.project_end_date.year, one_project.project_end_date.month, one_project.project_end_date.day)
                 if current_unix_time <= datetime.timestamp(datetime_from_date):
                     List.append(one_project)
-        return List
+        return Query.pagination(List, entries_per_page,page_number)
+
 
     # @login_required
     # @staff_member_required
@@ -337,12 +305,8 @@ class Query(graphene.ObjectType):
         return len(List)
 
 
-
-
-
-
     # @login_required
-    def resolve_all_on_progress_projects_per_user(self, info, username):
+    def resolve_all_on_progress_projects_per_user(self, info, username, page_number=1, entries_per_page=10):
         current_unix_time= datetime.timestamp(datetime.now())
         queryset= project.objects.all()
         List = []
@@ -353,7 +317,8 @@ class Query(graphene.ObjectType):
                 for one_user in userObjects:
                     if username == one_user.username:
                         List.append(one_project)
-        return List
+        return Query.pagination(List, entries_per_page,page_number)
+
 
     # @login_required
     def resolve_count_all_on_progress_projects_per_user(self, info, username):
@@ -367,22 +332,11 @@ class Query(graphene.ObjectType):
                 for one_user in userObjects:
                     if username == one_user.username:
                         List.append(one_project)
-        if len(List)!=None:
-            return len(List)
-        else:
-            return 0
+        return len(List)
 
-
-
-
-
-
-
-    get_any_week_tasks = graphene.List(task_type,  start_date = graphene.Date(required = True), end_date = graphene.Date(required=True), project_id = graphene.ID(required = True))
 
     # @login_required
-    def resolve_get_any_week_tasks(self, info, start_date, end_date , project_id ):
-
+    def resolve_get_any_week_tasks(self, info, start_date, end_date , project_id , page_number=1, entries_per_page=10):
         all_tasks = task.objects.filter(project_id = project_id)
 
         start_date_unix_time  = datetime.timestamp(datetime(start_date.year, start_date.month, start_date.day))
@@ -395,15 +349,11 @@ class Query(graphene.ObjectType):
 
             if task_start_date_unix_time >= start_date_unix_time and task_end_date_unix_time <= end_date_unix_time:
                 List.append(tuple)
-        return List
+        return Query.pagination(List, entries_per_page,page_number)
 
-
-
-
-    all_projects_of_a_particular_user = graphene.List(project_type, username=graphene.ID(required=True))
 
     # @login_required
-    def resolve_all_projects_of_a_particular_user(self, info,username):
+    def resolve_all_projects_of_a_particular_user(self, info,username, page_number=1, entries_per_page=10):
         List =[]
         all_projects = project.objects.all()
         for one_project in all_projects:
@@ -411,12 +361,10 @@ class Query(graphene.ObjectType):
             for one_user in userObjects:
                 if username == one_user.username:
                     List.append(one_project)
+        return Query.pagination(List, entries_per_page,page_number)
 
-        return List
 
-    all_projects_per_user_and_tasks_for_the_past_week = graphene.List(project_type, username=graphene.String(required=True))
-    def resolve_all_projects_per_user_and_tasks_for_the_past_week(self, info, username):
-
+    def resolve_all_projects_per_user_and_tasks_for_the_past_week(self, info, username, page_number=1, entries_per_page=10):
         current_unix_time= datetime.timestamp(datetime.now())
         queryset= project.objects.all()
         List = []
@@ -430,19 +378,12 @@ class Query(graphene.ObjectType):
                             start_date_unix_time = datetime.timestamp(datetime_from_date)
                             if  current_unix_time - start_date_unix_time >=0 and current_unix_time - start_date_unix_time <= 7*86400:
                                 List.append(one_project)
-
-        return List
-
+        return Query.pagination(List, entries_per_page,page_number)
 
 
-    count_total_projects = graphene.Int()
-
-    def resolve_count_total_projects(self, info):
+    def resolve_count_total_projects(self, info, page_number=1, entries_per_page=10):
         return len(project.objects.all())
 
-
-
-    count_total_projects_per_user= graphene.Int(username = graphene.String(required = True))
 
     def resolve_count_total_projects_per_user(self,info, username):
         all_projects = project.objects.all()
@@ -455,10 +396,7 @@ class Query(graphene.ObjectType):
         return len(List)
 
 
-
-    manager_summary_report = graphene.List(task_type)
-
-    def resolve_manager_summary_report(self,info,**kwargs):
+    def resolve_manager_summary_report(self,info, page_number=1, entries_per_page=10,**kwargs):
         all_projects = project.objects.all()
         workdone_tasks_for_all_projects = []
         wayforward_tasks_for_all_projects = []
